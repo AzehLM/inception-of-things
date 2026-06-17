@@ -317,3 +317,25 @@ C'est un petit service léger qui fait deux choses : DHCP (distribuer des IP aut
 
 CPU (virtualisation matérielle) → KVM (accès kernel à cette virtualisation) → QEMU (émule la VM complète) → libvirt (gère QEMU proprement) → Vagrant (automatise libvirt avec un fichier de config) → Vagrantfile 
 En parallèle pour le réseau : bridge (virbr0/virbr1) = le switch virtuel, vnet = le câble de chaque VM vers ce switch, dnsmasq = le serveur qui distribue les adresses IP sur ce réseau.
+
+---
+
+## Resources
+   * Libvirt
+      * https://libvirt.org/docs.html
+      * https://jamielinux.com/docs/libvirt-networking-handbook/
+      * https://libvirt.org/formatnetwork.html
+      * https://wiki.archlinux.org/title/Libvirt
+   * Vagrant+Libvirt
+      * https://vagrant-libvirt.github.io/vagrant-libvirt/configuration.html
+      * https://github.com/vagrant-libvirt/vagrant-libvirt
+      * https://medium.com/@joseignacio.carretero/vagrant-libvirt-plugin-57f253887308
+   * Vagrant
+      * https://fedoramagazine.org/vagrant-beyond-basics/
+      * https://developer.hashicorp.com/vagrant/docs/triggers/usage
+   * Dnmasq
+      * https://thekelleys.org.uk/dnsmasq/doc.html
+   * SSH
+      * https://medium.com/@favboladale/how-to-connect-from-one-machine-to-another-using-ssh-vagrant-6878e26d9091
+      * https://stackoverflow.com/questions/73500827/vagrant-multi-vm-ssh-connection-setup-works-on-one-but-not-the-others
+      * https://www.portnox.com/cybersecurity-101/authentication/ssh-passwordless-login/
