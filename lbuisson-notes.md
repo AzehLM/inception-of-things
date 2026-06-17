@@ -253,6 +253,7 @@ ssh -o StrictHostKeyChecking=no vagrant@192.168.57.111 #StrickHostKeyChecking=no
 ```
 
 How to automatize with Vagrantfile ?
+   * use a triger that read on the main VM the SSH of one nested VM to copy it into the other nested VM
 
 ---
 
