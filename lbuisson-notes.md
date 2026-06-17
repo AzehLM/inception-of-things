@@ -339,3 +339,6 @@ En parallèle pour le réseau : bridge (virbr0/virbr1) = le switch virtuel, vnet
       * https://medium.com/@favboladale/how-to-connect-from-one-machine-to-another-using-ssh-vagrant-6878e26d9091
       * https://stackoverflow.com/questions/73500827/vagrant-multi-vm-ssh-connection-setup-works-on-one-but-not-the-others
       * https://www.portnox.com/cybersecurity-101/authentication/ssh-passwordless-login/
+   * Vagrant+K3s
+      * https://medium.com/@dharsannanantharaman/create-a-high-availabilty-lightweight-kubernetes-k3s-cluster-using-vagrant-822a1e025855
+      * https://web-docs.gsi.de/~vpenso/notes/posts/kubernetes/vagrant-k3s.html
