@@ -16,6 +16,13 @@ Vagrant.configure("2") do |config|
       lv.memory = 1024 # RAM in MB, within the 512–1024 MB spec range
       lv.cpus = 1
     end
+
+    server.trigger.after :up do |trigger|
+      trigger.run = { inline:
+        "sh -c \"cat .vagrant/machines/lbuissonS/libvirt/private_key | vagrant ssh lbuissonSW -- 'cat > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa'\""
+      }
+    end
+
   end
 
   config.vm.define "lbuissonSW" do |agent|
@@ -25,5 +32,12 @@ Vagrant.configure("2") do |config|
       lv.memory = 1024
       lv.cpus = 1
     end
+
+    agent.trigger.after :up do |trigger|
+      trigger.run = { inline:
+        "sh -c \"cat .vagrant/machines/lbuissonSW/libvirt/private_key | vagrant ssh lbuissonS -- 'cat > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa'\""
+      }
+    end
+
   end
 end
