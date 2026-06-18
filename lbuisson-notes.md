@@ -239,7 +239,7 @@ ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
 cat ~/.ssh/id_ed25519.pub
 ```
 
-inside th e other VM
+inside the other VM
 ```bash
 mkdir -p ~/.ssh
 echo "ssh_key" >> ~/.ssh/authorized_keys
@@ -286,6 +286,7 @@ Transitioning into a fully containerized local environment using **K3d** to simu
 * `vagrant status`: Check the current status of your VMs.
 * `vagrant halt`: Gracefully shut down the VMs.
 * `vagrant destroy -f`: Completely delete the VMs to reset the environment.
+* `vagrant provision`: Force to replay the provision/script part on the VM
 * `kubectl get pods -A`: List all running pods across all namespaces.
 
 ---
