@@ -216,11 +216,11 @@ From inside the server, confirm the private network interface has the expected I
 vagrant ssh lbuissonS
 ip a
 ```
-Expected: an interface (e.g. `eth1`) with `192.168.57.110/24`.
+Expected: an interface (e.g. `eth1`) with `192.168.56.110/24`.
 
 Ping the agent from the server:
 ```bash
-ping -c 3 192.168.57.111
+ping -c 3 192.168.56.111
 ```
 Expected: `0% packet loss`.
 
@@ -228,7 +228,7 @@ Exit and repeat in the other direction:
 ```bash
 exit
 vagrant ssh lbuissonSW
-ping -c 3 192.168.57.110
+ping -c 3 192.168.56.110
 ```
 Expected: `0% packet loss`.
 
@@ -249,7 +249,7 @@ chmod 600 ~/.ssh/authorized_keys
 
 Go back in the first VM
 ```bash
-ssh -o StrictHostKeyChecking=no vagrant@192.168.57.111 #StrickHostKeyChecking=no avoid being asked if I am sure to continue
+ssh -o StrictHostKeyChecking=no vagrant@192.168.56.111 #StrickHostKeyChecking=no avoid being asked if I am sure to continue
 ```
 
 How to automatize with Vagrantfile ?
