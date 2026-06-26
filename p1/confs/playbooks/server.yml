@@ -1,0 +1,100 @@
+---
+- name: Configure controller node and install K3s server
+  hosts: all # cannot put server as we are using server.vm.hostname = "guebersoS" in the Vagrantfile. Maybe I could replace it with guebersoS instead
+  become: true
+  gather_facts: false
+
+  vars:
+    node_ip: "192.168.56.110"
+    flannel_iface: "eth1"
+
+  tasks:
+    - name: Install python3 (required for Ansible modules)
+      ansible.builtin.raw: apk add --no-cache python3
+      changed_when: false
+
+    - name: Gather facts (now that python3 is available)
+      ansible.builtin.gather_facts:
+
+    - name: Ensure cgroup mode is set to unified in rc.conf
+      ansible.builtin.lineinfile:
+        path: /etc/rc.conf
+        regexp: '^#?\s*rc_cgroup_mode='
+        line: 'rc_cgroup_mode="unified"'
+        backup: true
+      register: cgroup_mode_changed
+
+    - name: Ensure cgroups OpenRC service is enabled at boot runlevel
+      ansible.builtin.command:
+        cmd: rc-update add cgroups boot
+      register: cgroup_service_added
+      changed_when: "'already' not in cgroup_service_added.stdout"
+      failed_when:
+        - cgroup_service_added.rc != 0
+        - "'already' not in cgroup_service_added.stderr"
+
+    - name: Reboot the VM so the unified cgroup2 mount takes effect
+      ansible.builtin.reboot:
+        reboot_timeout: 120
+        connect_timeout: 5
+        post_reboot_delay: 5
+        msg: "Rebooting to apply cgroup2 unified mode"
+      when: cgroup_mode_changed.changed or cgroup_service_added.changed
+
+    - name: Verify cgroup2 unified controllers are available
+      ansible.builtin.command:
+        cmd: cat /sys/fs/cgroup/cgroup.controllers
+      register: cgroup_controllers
+      changed_when: false
+
+    - name: Fail early if expected cgroup controllers are missing
+      ansible.builtin.fail:
+        msg: >
+          Expected cgroup controllers not found. Got: "{{ cgroup_controllers.stdout }}".
+          K3s/kubelet will not start correctly without cpu, memory, pids, io, cpuset.
+      when: >
+        not (cgroup_controllers.stdout is search('cpu') and
+             cgroup_controllers.stdout is search('memory') and
+             cgroup_controllers.stdout is search('pids') and
+             cgroup_controllers.stdout is search('io') and
+             cgroup_controllers.stdout is search('cpuset'))
+
+    - name: Check if K3s is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_binary
+
+    - name: Download K3s install script
+      ansible.builtin.get_url:
+        url: https://get.k3s.io
+        dest: /tmp/k3s-install.sh
+        mode: "0755"
+      when: not k3s_binary.stat.exists
+
+    - name: Install and start K3s in server (controller) mode
+      ansible.builtin.command:
+        cmd: >
+          /tmp/k3s-install.sh server
+          --node-ip={{ node_ip }}
+          --bind-address={{ node_ip }}
+          --advertise-address={{ node_ip }}
+          --flannel-iface={{ flannel_iface }}
+      when: not k3s_binary.stat.exists
+
+    - name: Wait for K3s service to report started
+      ansible.builtin.command:
+        cmd: rc-service k3s status
+      register: k3s_status
+      until: "'started' in k3s_status.stdout"
+      retries: 12
+      delay: 5
+      changed_when: false
+
+    - name: Wait for the node to become Ready
+      ansible.builtin.command:
+        cmd: k3s kubectl get nodes --no-headers
+      register: k3s_node_status
+      until: "'Ready' in k3s_node_status.stdout"
+      retries: 12
+      delay: 5
+      changed_when: false
