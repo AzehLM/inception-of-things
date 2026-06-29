@@ -65,3 +65,22 @@ L'interface d'Argo CD montre l'état de synchronisation, les différences entre 
 
 Les control groups sont une des feature du noyau Linux qui permet de **limiter, isoler, monitorer** les ressources consommées par des gorupes de processus.
 Quand on utiliser une distribution OpenRC (Alpine), on utiliser rc-group (Service OpenRC)  pour monter/initialiser les cgroups au boot
+
+
+# Token secret
+
+`/var/lib/rancher/k3s/server/node-token`
+
+Token secret qui sert de secret partagé entre server et agents.
+
+On en a besoin pour s'authentifier au server
+
+```sh
+curl -sfL https://get.k3s.io | sh -s - agent \
+  --server https://x \
+  --token <contenu_du_node-token>```
+```
+
+Avec Ansible on peut le récupérer via une tache `slurp` ou `fetch` ou encore via les `hostvars` pour partager une value entre plusieurs plays d'un meme playbook
+
+[k3s token](https://docs.k3s.io/cli/token)
