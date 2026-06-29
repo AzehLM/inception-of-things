@@ -79,6 +79,7 @@
           --bind-address={{ node_ip }}
           --advertise-address={{ node_ip }}
           --flannel-iface={{ flannel_iface }}
+          --write-kubeconfig-mode 644
       when: not k3s_binary.stat.exists
 
     - name: Wait for K3s service to report started
