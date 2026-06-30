@@ -1,0 +1,9 @@
+---
+- name: Configure agent node and install K3s agent
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    node_ip: "192.168.56.111"
+    flannel_iface: "eth1"
