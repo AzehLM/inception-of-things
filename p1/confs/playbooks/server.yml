@@ -16,6 +16,36 @@
     - name: Gather facts (now that python3 is available)
       ansible.builtin.gather_facts:
 
+    - name: Disable SSH password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?\s*PasswordAuthentication\s+'
+        line: 'PasswordAuthentication no'
+      register: ssh_password_auth_changed
+
+    - name: Disable SSH challenge-response/keyboard-interactive authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?\s*KbdInteractiveAuthentication\s+'
+        line: 'KbdInteractiveAuthentication no'
+      register: ssh_kbdint_auth_changed
+
+    - name: Restrict root login to key-based authentication only
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?\s*PermitRootLogin\s+'
+        line: 'PermitRootLogin prohibit-password'
+      register: ssh_root_login_changed
+
+    - name: Restart sshd to apply SSH hardening
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+      when: >
+        ssh_password_auth_changed.changed or
+        ssh_kbdint_auth_changed.changed or
+        ssh_root_login_changed.changed
+
     - name: Ensure cgroup mode is set to unified in rc.conf
       ansible.builtin.lineinfile:
         path: /etc/rc.conf
