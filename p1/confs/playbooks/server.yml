@@ -1,27 +1,30 @@
 ---
 - name: Configure controller node and install K3s server
-  hosts: all # cannot put server as we are using server.vm.hostname = "guebersoS" in the Vagrantfile. Maybe I could replace it with guebersoS instead
-  become: true
-  gather_facts: false
+  hosts: all # hosts: who this play applies to.
+  become: true # tells Ansible to run tasks with privilege (sudo). This playbook will edit system files and install package and we want to avoid errors
 
+  gather_facts: false # default is true and needs python which alpine doesn't have natively
+
+  # vars: variables local to this play, reusable below via {{ variable_name }}.
+  # Centralizing avoids repetition.
   vars:
     node_ip: "192.168.56.110"
     flannel_iface: "eth1"
 
   tasks:
-    - name: Install python3 # required for Ansible modules
-      ansible.builtin.raw: apk add --no-cache python3
-      changed_when: false
+    - name: Install python3 (required for Ansible modules)
+      ansible.builtin.raw: apk add --no-cache python3 # raw executes a command directly over ssh
+      changed_when: false # to avoid reports from this task (because of raw)
 
     - name: Gather facts (now that python3 is available)
-      ansible.builtin.gather_facts:
+      ansible.builtin.gather_facts: # calling the gather_facts module now that python3 is installed so next tasks can rely on ansible_facts
 
     - name: Disable SSH password authentication
-      ansible.builtin.lineinfile:
+      ansible.builtin.lineinfile: # lineinfile ensures a particular line exists in a file
         path: /etc/ssh/sshd_config
         regexp: '^#?\s*PasswordAuthentication\s+'
         line: 'PasswordAuthentication no'
-      register: ssh_password_auth_changed
+      register: ssh_password_auth_changed # register captures the results into a variable that can be references in later tasks
 
     - name: Disable SSH challenge-response/keyboard-interactive authentication
       ansible.builtin.lineinfile:
@@ -34,14 +37,14 @@
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
         regexp: '^#?\s*PermitRootLogin\s+'
-        line: 'PermitRootLogin prohibit-password'
+        line: 'PermitRootLogin prohibit-password' # prohibit-password allows root to log in only with a key (no more password connection allowed. We'll use vagrant ssh to get into our pods)
       register: ssh_root_login_changed
 
     - name: Restart sshd to apply SSH hardening
-      ansible.builtin.service:
+      ansible.builtin.service: # service is an Ansible wrapper to start/stop/restart system services
         name: sshd
         state: restarted
-      when: >
+      when: > # quite explicity, executing this task when variables changes
         ssh_password_auth_changed.changed or
         ssh_kbdint_auth_changed.changed or
         ssh_root_login_changed.changed
@@ -50,26 +53,27 @@
       ansible.builtin.lineinfile:
         path: /etc/rc.conf
         regexp: '^#?\s*rc_cgroup_mode='
-        line: 'rc_cgroup_mode="unified"'
-        backup: true
+        line: 'rc_cgroup_mode="unified"' # alpine default cgroup mount is hybrid. kubelet refuses to operate on cgroup v1 so we unify v1/v2 cgroups
+        backup: true # create a backup file in case something goes wrong (allow restore)
       register: cgroup_mode_changed
 
     - name: Ensure cgroups OpenRC service is enabled at boot runlevel
-      ansible.builtin.command:
+      ansible.builtin.command: # runs a shell command  and captures its result but unlike raw, this require Python
         cmd: rc-update add cgroups boot
       register: cgroup_service_added
-      changed_when: "'already' not in cgroup_service_added.stdout"
-      failed_when:
+      changed_when: "'already' not in cgroup_service_added.stdout" # OpenRC says 'already' if the service was already in that state
+      failed_when: # conditional expression that overrides the task’s normal ‘failed’ status.
         - cgroup_service_added.rc != 0
         - "'already' not in cgroup_service_added.stderr"
 
     - name: Reboot the VM so the unified cgroup2 mount takes effect
-      ansible.builtin.reboot:
+
+      ansible.builtin.reboot: # quite explicite, Ansible has a dedicated module that reboots the current target
         reboot_timeout: 120
         connect_timeout: 5
         post_reboot_delay: 5
-        msg: "Rebooting to apply cgroup2 unified mode"
-      when: cgroup_mode_changed.changed or cgroup_service_added.changed
+        msg: "Rebooting to apply cgroup2 unified mode" # required, only restarting cgroups service is not enough
+      when: cgroup_mode_changed.changed or cgroup_service_added.changed # only executing this task if those two cgroup tasks have done something to avoid extra reboot
 
     - name: Verify cgroup2 unified controllers are available
       ansible.builtin.command:
@@ -78,11 +82,11 @@
       changed_when: false
 
     - name: Fail early if expected cgroup controllers are missing
-      ansible.builtin.fail:
+      ansible.builtin.fail: # fail stops the playbook depending on conditionnal verification
         msg: >
           Expected cgroup controllers not found. Got: "{{ cgroup_controllers.stdout }}".
           K3s/kubelet will not start correctly without cpu, memory, pids, io, cpuset.
-      when: >
+      when: > # checking that the controllers K3s needs are in the /sys/fs/cgroup/cgroup.controllers.
         not (cgroup_controllers.stdout is search('cpu') and
              cgroup_controllers.stdout is search('memory') and
              cgroup_controllers.stdout is search('pids') and
@@ -90,18 +94,20 @@
              cgroup_controllers.stdout is search('cpuset'))
 
     - name: Check if K3s is already installed
-      ansible.builtin.stat:
+      ansible.builtin.stat: # stat inspects a path (existence, permission, etc.)
         path: /usr/local/bin/k3s
-      register: k3s_binary
+      register: k3s_binary # if already installed then we skip the next tasks
 
     - name: Download K3s install script
-      ansible.builtin.get_url:
+      ansible.builtin.get_url: # downloads a file from a target (similar to curl)
         url: https://get.k3s.io
         dest: /tmp/k3s-install.sh
-        mode: "0755"
+        mode: "0755"  # make it executable
       when: not k3s_binary.stat.exists
 
     - name: Install and start K3s in server (controller) mode
+      # We run the official K3s install script with "server" as its first
+      # argument, plus explicit network flags
       ansible.builtin.command:
         cmd: >
           /tmp/k3s-install.sh server
@@ -109,12 +115,11 @@
           --bind-address={{ node_ip }}
           --advertise-address={{ node_ip }}
           --flannel-iface={{ flannel_iface }}
-          --write-kubeconfig-mode 644
       when: not k3s_binary.stat.exists
 
     - name: Wait for K3s service to report started
       ansible.builtin.command:
-        cmd: rc-service k3s status
+        cmd: rc-service k3s status # polling the status as OpenRC doens't have a wait until ready verification system
       register: k3s_status
       until: "'started' in k3s_status.stdout"
       retries: 12
@@ -123,7 +128,7 @@
 
     - name: Wait for the node to become Ready
       ansible.builtin.command:
-        cmd: k3s kubectl get nodes --no-headers
+        cmd: k3s kubectl get nodes --no-headers # checking the actual Kubernetes node status (12 tries)
       register: k3s_node_status
       until: "'Ready' in k3s_node_status.stdout"
       retries: 12
