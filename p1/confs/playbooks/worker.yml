@@ -1,12 +1,14 @@
 ---
 - name: Configure agent node and install K3s agent
   hosts: all
-  become: true
+  become: true 
   gather_facts: false
 
   vars:
     node_ip: "192.168.56.111"
     flannel_iface: "eth1"
+    # reference to control-panel (server node) so the agent can join the pod cluster
+    # the URL have to match the --advertise-address used on the server configuration (6443 is the default API port)
     k3s_server_url: "https://192.168.56.110:6443"
 
   tasks:
@@ -91,14 +93,14 @@
              cgroup_controllers.stdout is search('cpuset'))
 
     - name: Read node-token from the K3s server
-      ansible.builtin.slurp:
+      ansible.builtin.slurp: # slurp reads a file's content form a target (here the node-token of the server node)
         src: /var/lib/rancher/k3s/server/node-token
       register: node_token_raw
-      delegate_to: guebersoS
+      delegate_to: guebersoS # this allow us to run the slurp on another host. Here, only our server node have access to this token so it needs to be rrun on ther other VM
 
     - name: Set the node token as a fact
-      ansible.builtin.set_fact:
-        k3s_node_token: "{{ node_token_raw.content | b64decode | trim }}"
+      ansible.builtin.set_fact: # set_fact creates or overwrites a variable
+        k3s_node_token: "{{ node_token_raw.content | b64decode | trim }}" # slurp encodes the value read in base64 so we need to decode it to store it properly
 
     - name: Check if K3s agent is already installed
       ansible.builtin.stat:
@@ -114,8 +116,8 @@
 
     - name: Install and start K3s in agent (worker) mode
       ansible.builtin.command:
-        cmd: >
-          /tmp/k3s-install.sh agent
+        cmd: > # same as the server but we install k3s in agent mode, using the k3s_node_token we got from the above tasks
+          /tmp/k3s-install.sh agent 
           --node-ip={{ node_ip }}
           --flannel-iface={{ flannel_iface }}
           --server={{ k3s_server_url }}
@@ -124,7 +126,7 @@
 
     - name: Wait for K3s agent service to report started
       ansible.builtin.command:
-        cmd: rc-service k3s-agent status
+        cmd: rc-service k3s-agent status # using k3s-agent here, k3s is reserved for the server role
       register: k3s_status
       until: "'started' in k3s_status.stdout"
       retries: 12

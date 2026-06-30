@@ -2,7 +2,6 @@
 - name: Configure controller node and install K3s server
   hosts: all # hosts: who this play applies to.
   become: true # tells Ansible to run tasks with privilege (sudo). This playbook will edit system files and install package and we want to avoid errors
-
   gather_facts: false # default is true and needs python which alpine doesn't have natively
 
   # vars: variables local to this play, reusable below via {{ variable_name }}.
