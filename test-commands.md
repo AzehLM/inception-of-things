@@ -73,7 +73,7 @@ vagrant ssh <nameS> -c "kubectl get nodes"
 ## verify the default ingress
 
 ```sh
-vagrant ssh <nameS> -c kubectl get pods -A | grep traefik
-vagrant ssh <nameS> -c kubectl get svc -A | grep traefik
-vagrant ssh <nameS> -c kubectl get ingressclass
+vagrant ssh <nameS> -c "kubectl get pods -A | grep traefik"
+vagrant ssh <nameS> -c "kubectl get svc -A | grep traefik"
+vagrant ssh <nameS> -c "kubectl get ingressclass"
 ```
