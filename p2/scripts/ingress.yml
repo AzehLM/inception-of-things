@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: p2_ingress
+  name: p2-ingress
 spec:
   ingressClassName: traefik # this could be removed I think. as traefik is the default ingress used
   rules:
