@@ -69,3 +69,11 @@ vagrant ssh <nameSW> -c "sudo k3s kubectl get nodes -o wide"
 ```sh
 vagrant ssh <nameS> -c "kubectl get nodes"
 ```
+
+## verify the default ingress
+
+```sh
+vagrant ssh <nameS> -c kubectl get pods -A | grep traefik
+vagrant ssh <nameS> -c kubectl get svc -A | grep traefik
+vagrant ssh <nameS> -c kubectl get ingressclass
+```
