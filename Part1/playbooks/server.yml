@@ -1,0 +1,87 @@
+---
+- name: Configure K3s server node
+  hosts: server
+  become: true
+
+  tasks:
+    - name: Install curl
+      apt:
+        name: curl
+        state: present
+        update_cache: yes
+
+  # Generate SSH keypair on server if not already present
+    - name: Generate SSH keypair on server
+      openssh_keypair:
+        path: /home/vagrant/.ssh/id_rsa
+        type: rsa
+        owner: vagrant
+        group: vagrant
+        mode: '0600'
+      become: true
+
+    # Generate SSH keypair on agent if not already present
+    - name: Generate SSH keypair on agent
+      openssh_keypair:
+        path: /home/vagrant/.ssh/id_rsa
+        type: rsa
+        owner: vagrant
+        group: vagrant
+        mode: '0600'
+      become: true
+      delegate_to: lbuissonSW
+
+    # Server → Agent: allow server to SSH into agent
+    - name: Get server public key
+      command: cat /home/vagrant/.ssh/id_rsa.pub
+      register: server_pubkey
+
+    - name: Add server public key to agent authorized_keys
+      delegate_to: lbuissonSW
+      authorized_key:
+        user: vagrant
+        key: "{{ server_pubkey.stdout }}"
+        state: present
+
+    # Agent → Server: allow agent to SSH into server
+    - name: Get agent public key
+      command: cat /home/vagrant/.ssh/id_rsa.pub
+      delegate_to: lbuissonSW
+      register: agent_pubkey
+
+    - name: Add agent public key to server authorized_keys
+      authorized_key:
+        user: vagrant
+        key: "{{ agent_pubkey.stdout }}"
+        state: present
+
+    - name: Install K3s server
+      shell: |
+        curl -sfL https://get.k3s.io | sh -s - \
+          --node-ip 192.168.56.110 \
+          --bind-address 192.168.56.110
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Wait for K3s to be ready
+      systemd:
+        name: k3s
+        state: started
+        enabled: yes
+
+    - name: Wait for node token to be generated
+      wait_for:
+        path: /var/lib/rancher/k3s/server/node-token
+        state: present
+        timeout: 60
+
+    - name: Read node token
+      command: cat /var/lib/rancher/k3s/server/node-token
+      register: k3s_token
+
+    # Store token locally on host for the agent playbook to use
+    - name: Save token to host
+      local_action:
+        module: copy
+        content: "{{ k3s_token.stdout }}"
+        dest: /tmp/k3s_token

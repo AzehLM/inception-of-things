@@ -1,0 +1,30 @@
+---
+- name: Configure K3s agent node
+  hosts: agent
+  become: true
+
+  tasks:
+    - name: Install curl
+      apt:
+        name: curl
+        state: present
+        update_cache: yes
+
+    - name: Read K3s token from host
+      set_fact:
+        k3s_token: "{{ lookup('file', '/tmp/k3s_token') }}"
+
+    - name: Install K3s agent
+      shell: |
+        curl -sfL https://get.k3s.io | \
+          K3S_URL=https://192.168.56.110:6443 \
+          K3S_TOKEN={{ k3s_token }} \
+          sh -s - --node-ip 192.168.56.111
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Wait for K3s agent service to start
+      systemd:
+        name: k3s-agent
+        state: started
+        enabled: yes
