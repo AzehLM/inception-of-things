@@ -1,0 +1,3 @@
+---
+- import_playbook: scripts/setup_server.yml
+- import_playbook: scripts/setup_worker.yml
