@@ -1,0 +1,131 @@
+---
+- name: Configure K3s Server Node on Debian
+  hosts: k3s_servers
+  become: yes
+
+  tasks:
+    - name: Configure DNS to use default gateway (host) to resolve domains at 42
+      ansible.builtin.shell: |
+        gateway_ip=$(ip route show | grep default | awk '{print $3}')
+        if [ ! -z "$gateway_ip" ]; then
+          echo "nameserver $gateway_ip" > /etc/resolv.conf
+        fi
+      changed_when: false
+
+    - name: Update apt cache and install curl
+      ansible.builtin.apt:
+        update_cache: yes
+        name:
+          - curl
+        state: present
+
+    - name: Create user pnaessen
+      ansible.builtin.user:
+        name: pnaessen
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+        state: present
+
+    - name: Configure passwordless sudo for user pnaessen
+      ansible.builtin.copy:
+        content: "pnaessen ALL=(ALL) NOPASSWD:ALL"
+        dest: /etc/sudoers.d/pnaessen
+        mode: '0440'
+
+    - name: Set up passwordless SSH key for user pnaessen
+      ansible.builtin.file:
+        path: /home/pnaessen/.ssh
+        state: directory
+        owner: pnaessen
+        group: pnaessen
+        mode: '0700'
+
+    - name: Copy authorized_keys from vagrant to pnaessen
+      ansible.builtin.copy:
+        src: /home/vagrant/.ssh/authorized_keys
+        dest: /home/pnaessen/.ssh/authorized_keys
+        remote_src: yes
+        owner: pnaessen
+        group: pnaessen
+        mode: '0600'
+
+    - name: Check if K3s is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_binary
+
+    - name: Download K3s install script
+      ansible.builtin.get_url:
+        url: https://get.k3s.io
+        dest: /tmp/k3s-install.sh
+        mode: "0755"
+      when: not k3s_binary.stat.exists
+
+    - name: Install and start K3s in server (control plane) mode
+      ansible.builtin.command:
+        cmd: >
+          /tmp/k3s-install.sh server
+          --node-ip=192.168.56.110
+          --bind-address=192.168.56.110
+          --tls-san=192.168.56.110
+          --write-kubeconfig-mode 644
+      when: not k3s_binary.stat.exists
+
+    - name: Wait for K3s node token to be generated
+      ansible.builtin.wait_for:
+        path: /var/lib/rancher/k3s/server/node-token
+        state: present
+        timeout: 300
+
+    - name: Fetch K3s node token to the host machine
+      ansible.builtin.fetch:
+        src: /var/lib/rancher/k3s/server/node-token
+        dest: /tmp/k3s-node-token
+        flat: yes
+
+    - name: Configure kubectl for vagrant user
+      block:
+        - name: Create .kube directory for vagrant
+          ansible.builtin.file:
+            path: /home/vagrant/.kube
+            state: directory
+            owner: vagrant
+            group: vagrant
+            mode: '0700'
+        - name: Copy K3s config for vagrant
+          ansible.builtin.copy:
+            src: /etc/rancher/k3s/k3s.yaml
+            dest: /home/vagrant/.kube/config
+            remote_src: yes
+            owner: vagrant
+            group: vagrant
+            mode: '0600'
+        - name: Add KUBECONFIG to vagrant bashrc
+          ansible.builtin.lineinfile:
+            path: /home/vagrant/.bashrc
+            line: 'export KUBECONFIG=/home/vagrant/.kube/config'
+            state: present
+
+    - name: Configure kubectl for pnaessen user
+      block:
+        - name: Create .kube directory for pnaessen
+          ansible.builtin.file:
+            path: /home/pnaessen/.kube
+            state: directory
+            owner: pnaessen
+            group: pnaessen
+            mode: '0700'
+        - name: Copy K3s config for pnaessen
+          ansible.builtin.copy:
+            src: /etc/rancher/k3s/k3s.yaml
+            dest: /home/pnaessen/.kube/config
+            remote_src: yes
+            owner: pnaessen
+            group: pnaessen
+            mode: '0600'
+        - name: Add KUBECONFIG to pnaessen bashrc
+          ansible.builtin.lineinfile:
+            path: /home/pnaessen/.bashrc
+            line: 'export KUBECONFIG=/home/pnaessen/.kube/config'
+            state: present
