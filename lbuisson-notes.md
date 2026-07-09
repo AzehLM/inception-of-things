@@ -255,6 +255,25 @@ ssh -o StrictHostKeyChecking=no vagrant@192.168.56.111 #StrickHostKeyChecking=no
 How to automatize with Vagrantfile ?
    * use a triger that read on the main VM the SSH of one nested VM to copy it into the other nested VM
 
+
+**Step 4: cluster Kubernetes**
+
+
+```bash
+vagrant ssh lbuissonS
+
+```
+
+```bash
+sudo kubectl get nodes -o wide
+
+```
+
+```bash
+sudo kubectl get pods -A
+
+```
+
 ---
 
 ## Part 2: K3s and 3 Simple Applications
@@ -288,6 +307,57 @@ Transitioning into a fully containerized local environment using **K3d** to simu
 * `vagrant destroy -f`: Completely delete the VMs to reset the environment.
 * `vagrant provision`: Force to replay the provision/script part on the VM
 * `kubectl get pods -A`: List all running pods across all namespaces.
+
+---
+
+## Clean up if IP problem
+#### 1. Nettoyage de Vagrant
+
+```bash
+# Force la destruction des VM gérées par le Vagrantfile local
+vagrant destroy -f
+
+# Supprime l'historique et les états locaux de Vagrant (efface le cache)
+rm -rf .vagrant/
+
+```
+
+#### 2. Suppression des "VM fantômes" dans libvirt (avec `virsh`)
+
+Si Vagrant a planté, les VM restent parfois bloquées dans libvirt. On les élimine manuellement :
+
+```bash
+# Force l'extinction des deux VM si elles tournent en tâche de fond
+sudo virsh destroy Part1_lbuissonS 2>/dev/null
+sudo virsh destroy Part1_lbuissonSW 2>/dev/null
+
+# Supprime la définition/existence des VM dans libvirt
+sudo virsh undefine Part1_lbuissonS 2>/dev/null
+sudo virsh undefine Part1_lbuissonSW 2>/dev/null
+
+# Libère l'espace disque en supprimant les disques virtuels (.img) restants
+sudo virsh vol-delete --pool default Part1_lbuissonS.img 2>/dev/null
+sudo virsh vol-delete --pool default Part1_lbuissonSW.img 2>/dev/null
+
+```
+
+#### 3. Relance propre du réseau et du DHCP
+
+C'est l'étape qui corrige le problème d'attribution d'IP :
+
+```bash
+# Redémarre le service libvirt pour rafraîchir le serveur DHCP interne
+sudo systemctl restart libvirtd
+
+# Force le démarrage du réseau par défaut (celui qui donne l'IP SSH)
+sudo virsh net-start default 2>/dev/null
+sudo virsh net-autostart default
+
+# (Optionnel) Vérifie que les réseaux nécessaires sont bien à l'état "active"
+sudo virsh net-list --all
+
+```
+
 
 ---
 
