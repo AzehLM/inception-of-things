@@ -120,6 +120,8 @@
 
     - name: Wait for Kubernetes API to be responsive
       ansible.builtin.command: kubectl get nodes
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
       register: api_check
       until: api_check.rc == 0
       retries: 30
@@ -128,3 +130,6 @@
     - name: Apply Kubernetes application and ingress configurations
       ansible.builtin.command:
         cmd: kubectl apply -f /vagrant/confs/
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
