@@ -7,11 +7,6 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   ingressClassName: traefik
-  defaultBackend:
-    service:
-      name: app3-service
-      port:
-        number: 80
   rules:
   - host: app1.com
     http:
