@@ -1,0 +1,35 @@
+# Deployment - we dfine the app and how many replicas we want
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app1
+  template:
+    metadata:
+      labels:
+        app: app1
+    spec:
+      containers:
+        - name: app1
+          # image: traefik/whoami:v1.10
+          image: nginxdemos/hello  # simple nginx that displays hostname
+          ports:
+            - containerPort: 80
+---
+# Service - we expose the deployment internally in the cluster
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1
+  namespace: default
+spec:
+  selector:
+    app: app1
+  ports:
+    - port: 80
+      targetPort: 80

@@ -1,0 +1,42 @@
+---
+- name: Configure K3s server node
+  hosts: server
+  become: true
+
+  tasks:
+    - name: Install curl
+      apt:
+        name: curl
+        state: present
+        update_cache: yes
+
+    - name: Install K3s server
+      shell: |
+        curl -sfL https://get.k3s.io | sh -s - \
+          --node-ip 192.168.56.110 \
+          --bind-address 192.168.56.110
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Ensure K3s service is started
+      systemd:
+        name: k3s
+        state: started
+        enabled: yes
+
+    - name: Copy manifests to server
+      copy:
+        src: manifests/
+        dest: /tmp/manifests/
+        mode: '0644'
+        
+    - name: Wait for K3s API to be ready
+      wait_for:
+        host: 192.168.56.110
+        port: 6443
+        timeout: 60
+
+    - name: Apply app manifests
+      shell: kubectl apply -f /tmp/manifests/
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
