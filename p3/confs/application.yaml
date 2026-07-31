@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/AzehLM/inception-of-things.git'
-    targetRevision: HEAD
+    targetRevision: feat/p1-pnaessen
     path: p3/confs
   destination:
     server: 'https://kubernetes.default.svc'
