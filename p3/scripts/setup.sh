@@ -47,7 +47,8 @@ kubectl config use-context k3d-dev-cluster
 
 echo -e "${YELLOW}[2/4] Deploying Argo CD${NC}"
 kubectl create namespace argocd 2>/dev/null || true
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
 if [ $? -ne 0 ]; then
     echo -e "${RED}Failed to apply Argo CD manifests.${NC}"
     exit 1
