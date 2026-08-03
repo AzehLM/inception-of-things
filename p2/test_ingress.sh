@@ -27,7 +27,17 @@ fi
 echo "--------------------------------------------------"
 echo ""
 
-echo -e "${GREEN}[3/3] Testing: Default (No Host Header)${NC}"
+echo -e "${GREEN}[3/4] Testing: app3.com${NC}"
+response=$(curl -s -H "Host: app3.com" http://$SERVER_IP)
+if [ $? -eq 0 ] && [ ! -z "$response" ]; then
+    echo "$response" | grep -E "Hostname:|IP:|Headers:" || echo "$response"
+else
+    echo -e "${RED}Error connecting to app3.com${NC}"
+fi
+echo "--------------------------------------------------"
+echo ""
+
+echo -e "${GREEN}[4/4] Testing: Default (No Host Header)${NC}"
 response=$(curl -s http://$SERVER_IP)
 if [ $? -eq 0 ] && [ ! -z "$response" ]; then
     echo "$response" | grep -E "Hostname:|IP:|Headers:" || echo "$response"
