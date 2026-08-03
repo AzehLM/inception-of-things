@@ -35,7 +35,7 @@ echo -e "${YELLOW}[1/4] Creating K3d cluster 'dev-cluster'...${NC}"
 if k3d cluster list | grep -q "dev-cluster"; then
     echo -e "${GREEN}[✓] Cluster 'dev-cluster' already exists. Skipping creation.${NC}"
 else
-    k3d cluster create dev-cluster --port "8888:80@loadbalancer" --api-port 6443 --agents 1 --wait
+    k3d cluster create dev-cluster --port "8888:80@loadbalancer" --api-port 6443 --agents 1 --k3s-arg "--kubelet-arg=eviction-hard=imagefs.available<1%,nodefs.available<1%@server:*" --k3s-arg "--kubelet-arg=eviction-hard=imagefs.available<1%,nodefs.available<1%@agent:*" --wait
     if [ $? -ne 0 ]; then
         echo -e "${RED} Failed to create K3d cluster.${NC}"
         exit 1
