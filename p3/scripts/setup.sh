@@ -42,10 +42,7 @@ echo -e "${GREEN}[OK] Argo CD manifests applied successfully.${NC}"
 
 echo -e "${YELLOW}[3/4] Waiting for Argo CD server to be ready...${NC}"
 
-kubectl wait --namespace argocd \
-    --for=condition=ready pod \
-    --selector=app.kubernetes.io/name=argocd-server \
-    --timeout=300s
+kubectl rollout status deployment/argocd-server -n argocd --timeout=300s
 
 echo -e "${GREEN}[OK] Argo CD server is ready.${NC}"
 
