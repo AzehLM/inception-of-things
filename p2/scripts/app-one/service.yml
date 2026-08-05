@@ -6,7 +6,7 @@ metadata:
   labels:
     app: app1
 spec:
-  type: ClusterIP
+  type: ClusterIP # automaticaly handle the round-robin between several replicas based on matched selector(to move in the app-two service file)
   selector:
     app: app-one
   ports:
