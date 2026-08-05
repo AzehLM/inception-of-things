@@ -2,19 +2,32 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: p2-ingress
+  namespace: p2
 spec:
   ingressClassName: traefik # this could be removed I think. as traefik is the default ingress used
   rules:
-  - hosts: app1
-  - http:
+  - host: app1.com
+    http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: app1
+            name: app-one
             port:
               number: 80
-
-
-# setup a defaultBackend for any redirection to app3
+  - host: app2.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app-two
+            port:
+              number: 80
+  defaultBackend:
+    service:
+      name: app-three
+      port:
+        number: 80
