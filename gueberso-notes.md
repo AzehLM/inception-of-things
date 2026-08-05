@@ -98,3 +98,7 @@ C'est le **deployment** qui indique le nombre de pods de cette image. Le service
 La chaine logique de la P2 c'est:
 
 `ingress` (entrée HTTP, routage par Host) -> `service` (point d'entré stable, loadbalancing interne) -> `deployment` (configuration des instances réelles de l'app)
+`protocol: TCP` et pas `HTTP` car:
+- TCP = comment les octets circulent entre clients et pods
+- HTTP = contenu de ces octets, au-dessus de TCP
+Ce n'est pas le role du Service de comprendre ou de faire du routage basé sur le contenue des requetes. C'est l'Ingress qui s'occupe de faire la transcription des headers HTPP (pour du virtual hosting par exemple)
