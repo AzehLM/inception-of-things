@@ -60,6 +60,8 @@ L'interface d'Argo CD montre l'état de synchronisation, les différences entre 
 
 ### Ingress - routeur HTTP du cluster
 
+Un Ingress permet de controler comment le traffic web atteint le workload (pods/applications).
+L'Ingress est l'entrypoint de nos clusters. Il permet de consolider une routine de regles en une ressource unique. Il est le seul listener des intereactions avec notre cluster. (D'ou l'utilisation de Traefik/Nginx/Caddy comme Ingress (dans le cas de workload HTTP))
 
 ### cgroups - Control Groups (noyau Linux)
 
@@ -84,3 +86,15 @@ curl -sfL https://get.k3s.io | sh -s - agent \
 Avec Ansible on peut le récupérer via une tache `slurp` ou `fetch` ou encore via les `hostvars` pour partager une value entre plusieurs plays d'un meme playbook
 
 [k3s token](https://docs.k3s.io/cli/token)
+
+
+
+### P2
+
+`service.yml` != `deployment.yml`
+
+C'est le **deployment** qui indique le nombre de pods de cette image. Le service est une **abstraction réseau** c'est lui qui donne une IP stable + un nom DNS interne a un group de pods (dont les IP changent a la recréation).
+
+La chaine logique de la P2 c'est:
+
+`ingress` (entrée HTTP, routage par Host) -> `service` (point d'entré stable, loadbalancing interne) -> `deployment` (configuration des instances réelles de l'app)
