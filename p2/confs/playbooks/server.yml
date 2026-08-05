@@ -134,3 +134,21 @@
       retries: 12
       delay: 5
       changed_when: false
+
+    - name: Copy K8s manifests to the VM
+      ansible.builtin.copy:
+        src: ../manifests/   # local directory with every manifests (deployment.yml, service.yml, ingress.yml)
+        dest: /home/vagrant/manifests/
+        mode: "0644"
+
+    - name: Apply namespace first
+      ansible.builtin.command:
+        cmd: kubectl apply -f /home/vagrant/manifests/namespace.yml
+      register: kubectl_ns_result
+      changed_when: "'unchanged' not in kubectl_ns_result.stdout"
+
+    - name: Apply all K8s manifests
+      ansible.builtin.command:
+        cmd: kubectl apply -f /home/vagrant/manifests/ -R
+      register: kubectl_apply_result
+      changed_when: "'unchanged' not in kubectl_apply_result.stdout"
