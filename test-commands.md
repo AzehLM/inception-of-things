@@ -77,3 +77,14 @@ vagrant ssh <nameS> -c "kubectl get pods -A | grep traefik"
 vagrant ssh <nameS> -c "kubectl get svc -A | grep traefik"
 vagrant ssh <nameS> -c "kubectl get ingressclass"
 ```
+
+
+
+# Part 2 - K3s and Mettre au propre
+
+vagrant up
+vagrant ssh guebersoS
+kubectl get nodes                            
+kubectl get all -n p2
+kubectl get ingress -n p2
+curl -H "Host: app1.com" http://192.168.56.110
