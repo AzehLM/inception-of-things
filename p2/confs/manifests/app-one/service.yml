@@ -6,12 +6,10 @@ metadata:
   labels:
     app: app1
 spec:
-  type: ClusterIP # automaticaly handle the round-robin between several replicas based on matched selector(to move in the app-two service file)
+  type: ClusterIP
   selector:
     app: app-one
   ports:
   - protocol: TCP
     port: 80
     targetPort: 80
-
-# https://kubernetes.io/docs/concepts/services-networking/service/#over-capacity-endpoints
