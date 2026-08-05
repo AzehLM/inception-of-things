@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-three
+  namespace: p2
+  labels:
+    app: app3
+spec:
+  type: ClusterIP
+  selector:
+    app: app-three
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
