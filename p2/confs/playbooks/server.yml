@@ -150,5 +150,3 @@
     - name: Apply all K8s manifests
       ansible.builtin.command:
         cmd: kubectl apply -f /home/vagrant/manifests/ -R
-      register: kubectl_apply_result
-      changed_when: "'unchanged' not in kubectl_apply_result.stdout"
