@@ -102,3 +102,10 @@ La chaine logique de la P2 c'est:
 - TCP = comment les octets circulent entre clients et pods
 - HTTP = contenu de ces octets, au-dessus de TCP
 Ce n'est pas le role du Service de comprendre ou de faire du routage basé sur le contenue des requetes. C'est l'Ingress qui s'occupe de faire la transcription des headers HTPP (pour du virtual hosting par exemple)
+
+
+# DOC POUR QUAND JE SUIS PAS A L'ECOLE
+
+https://github.com/traefik/traefik/pull/3404
+https://institute.sfeir.com/en/kubernetes-training/manifests-yaml-kubernetes-reference-quick/
+https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/
