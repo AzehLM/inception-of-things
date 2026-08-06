@@ -329,6 +329,9 @@ Cluster K3d \
 |__ namespace: argocd (ArgoCD - check the repo Github)\
 |__ namespace: dev (app wil42/playground - deployed automatically by ArgoCD)
 
+### Forward port to access to argocd
+* kubectl port-forward svc/argocd-server -n argocd 8080:443 --address 0.0.0.0
+
 ---
 
 ## Useful Commands
