@@ -320,7 +320,14 @@ Transitioning into a fully containerized local environment using **K3d** to simu
 * Installing and exposing Argo CD for continuous deployment.
 * Setting up a Git repository as the "Source of Truth" to automatically sync the cluster's state with your declarative YAML configurations.
 
-*(Documentation to be expanded during implementation)*
+### K3s vs K3d
+* K3s : Light Kubernetes distribution that runs directly on a VM - install directly the components in the host system
+* K3d: wrapper that allow K3s to run in a Docker container.
+
+### Archi
+Cluster K3d \
+|__ namespace: argocd (ArgoCD - check the repo Github)\
+|__ namespace: dev (app wil42/playground - deployed automatically by ArgoCD)
 
 ---
 
