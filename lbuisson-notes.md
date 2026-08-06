@@ -284,7 +284,31 @@ Deploying and routing applications within the K3s cluster created in Part 1 usin
 * Configuration of an Ingress Controller (Traefik, bundled with K3s) to route traffic based on hostnames or specific paths (e.g., `app1.local`).
 * Managing internal cluster routing and Pod high availability.
 
-*(Documentation to be expanded during implementation)*
+### Deployement order
+* Install curl
+* Install K3s (wait for it to be ready)
+* Copy manifests to server
+* Apply manifests
+
+### Architecture
+Browser - (HTTP request with header "Host: app1.com for instance) -> 192.168.56.110 (VM K3s IP) -> Traefik (Ingress Controller) read the header and decide where to route -> Service Kubernetes (app1 / app2 / app3) -> Pods (the containers that allow the app to run)
+
+### Manifests
+* Deployment: Define the application (which docker image to use, how many replicas, on which port to listen) - Kubernetes check if the number of replpicas asked are running - if one pod crash -> recreate one automatically
+* Ingress: routing HTTP extern rule. According to Host in the request, send the trafic towards this service.
+* Ingress Controller (traefik): check the Ingress objects of the cluster and config the routing rules accordingly
+   * Exemple:
+      * `curl -H "Host: app2.com" http://192.168.56.110`
+      * Request arrive on port 80 of the mentionned IP
+      * Traefik recieve the request and read the header
+      * Check the Ingress Rules (app2.com -> Service app2)
+      * Service app2 recieve the request and gives it to one of the 3 pods (round-robin)
+      * the pod anwer and the answer goes up to the browser
+
+### testing
+* `curl -H "Host: app1.com" http://192.168.56.110`
+* `sudo kubectl get pods -o wide`
+* `sudo kubectl get all`
 
 ---
 
@@ -307,6 +331,7 @@ Transitioning into a fully containerized local environment using **K3d** to simu
 * `vagrant destroy -f`: Completely delete the VMs to reset the environment.
 * `vagrant provision`: Force to replay the provision/script part on the VM
 * `kubectl get pods -A`: List all running pods across all namespaces.
+* `sudo virsh undefine Part2_lbuissonS --remove-all-storage` clear memory linked to a libvirt VM
 
 ---
 
