@@ -2,10 +2,9 @@
 
 echo "Creating K3d cluster"
 k3d cluster create iot-cluster \
-    --port "8888:8888@loadbalancer" \
-    --port "8080:80@loadbalancer" \
-    --port "8443:443@loadbalancer" \
-    --wait
+    --port "8888:80@loadbalancer" \
+    --port "9090:443@loadbalancer" \
+    --wait    
 
 echo "Creating namespaces"
 kubectl create namespace argocd
@@ -21,10 +20,10 @@ kubectl wait --for=condition=available \
     deployment/argocd-server \
     -n argocd
 
-echo "Exposing ArgoCD server as LoadBalancer"
+echo "Exposing ArgoCD server"
 kubectl patch svc argocd-server \
     -n argocd \
-    -p '{"spec": {"type": "LoadBalancer"}}'
+    -p '{"spec": {"type": "ClusterIP"}}'
 
 echo "Applying ArgoCD application config"
 kubectl apply -f confs/argocd-app.yml
@@ -35,11 +34,12 @@ kubectl wait --for=condition=available \
     deployment/playground \
     -n dev
 
-echo "Starting ArgoCD port-forward in background"
-nohup kubectl port-forward svc/argocd-server \
-    -n argocd \
-    8080:443 \
-    --address 0.0.0.0 > /tmp/argocd-portforward.log 2>&1 &
+# echo "Starting ArgoCD port-forward in background"
+# sleep 30
+# nohup kubectl port-forward svc/argocd-server \
+#     -n argocd \
+#     9090:443 \
+#     --address 0.0.0.0 > /tmp/argocd-portforward.log 2>&1 &
 
 ARGOCD_PASSWORD=$(kubectl get secret argocd-initial-admin-secret \
     -n argocd \
@@ -60,7 +60,7 @@ kubectl get deployment playground -n dev \
 echo ""
 echo ""
 echo "Setup complete."
-echo "    ArgoCD web interface: https://<IP-de-ta-VM>:8080"
+echo "    ArgoCD web interface: https://IP:9090"
 echo "    Username: admin"
 echo "    Password: $ARGOCD_PASSWORD"
 echo ""
