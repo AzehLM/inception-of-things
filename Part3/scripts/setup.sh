@@ -1,34 +1,41 @@
 #!/bin/bash
 
-echo "Creating K3d cluster"
+# Colors
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+# Port mappings for K3d loadbalancer:
+# 8888 (VM) → 80  : HTTP traffic → Traefik ingress controller → playground app
+# 9090 (VM) → 443 : HTTPS traffic → ArgoCD web UI (accessed via kubectl port-forward)
+echo -e "${BOLD}${BLUE}Creating K3d cluster${NC}"
 k3d cluster create iot-cluster \
     --port "8888:80@loadbalancer" \
     --port "9090:443@loadbalancer" \
     --wait    
 
-echo "Creating namespaces"
+echo -e "${BOLD}${BLUE}Creating namespaces${NC}"
 kubectl create namespace argocd
 kubectl create namespace dev
 
-echo "Installing ArgoCD in argocd namespace"
-echo "Installing ArgoCD in argocd namespace"
+echo -e "${BOLD}${BLUE}Installing ArgoCD in argocd namespace${NC}"
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml --server-side || true
 
-echo "Waiting for ArgoCD server to be ready"
+echo -e "${BOLD}${BLUE}Waiting for ArgoCD server to be ready${NC}"
 kubectl wait --for=condition=available \
     --timeout=300s \
     deployment/argocd-server \
     -n argocd
 
-echo "Exposing ArgoCD server"
-kubectl patch svc argocd-server \
-    -n argocd \
-    -p '{"spec": {"type": "ClusterIP"}}'
+# echo "Exposing ArgoCD server"
+# kubectl patch svc argocd-server \
+#     -n argocd \
+#     -p '{"spec": {"type": "ClusterIP"}}'
 
-echo "Applying ArgoCD application config"
+echo -e "${BOLD}${BLUE}Applying ArgoCD application config${NC}"
 kubectl apply -f confs/argocd-app.yml
 
-echo "Waiting for app to be deployed in dev namespace"
+echo -e "${BOLD}${BLUE}Waiting for app to be deployed in dev namespace${NC}"
 kubectl wait --for=condition=available \
     --timeout=300s \
     deployment/playground \
@@ -45,24 +52,7 @@ ARGOCD_PASSWORD=$(kubectl get secret argocd-initial-admin-secret \
     -n argocd \
     -o jsonpath='{.data.password}' | base64 --decode)
 
-echo "Cluster status:"
-kubectl get nodes
-echo ""
-echo "ArgoCD pods:"
-kubectl get pods -n argocd
-echo ""
-echo "App in dev namespace:"
-kubectl get pods -n dev
-echo ""
-echo "Current app version:"
-kubectl get deployment playground -n dev \
-    -o jsonpath='{.spec.template.spec.containers[0].image}'
-echo ""
 echo ""
 echo "Setup complete."
-echo "    ArgoCD web interface: https://IP:9090"
 echo "    Username: admin"
 echo "    Password: $ARGOCD_PASSWORD"
-echo ""
-echo "    To change app version: edit manifests/deployment.yml in your GitHub repo"
-echo "    Change image tag from v1 to v2 and push — ArgoCD will auto-sync"
