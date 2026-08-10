@@ -4,7 +4,7 @@ metadata:
   name: app-two
   namespace: p2
   labels:
-    app: app2
+    app: app-two
 spec:
   type: ClusterIP # automaticaly handle the round-robin between several replicas based on matched selector
   selector:

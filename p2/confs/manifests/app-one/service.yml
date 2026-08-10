@@ -4,7 +4,7 @@ metadata:
   name: app-one
   namespace: p2
   labels:
-    app: app1
+    app: app-one
 spec:
   type: ClusterIP
   selector:
