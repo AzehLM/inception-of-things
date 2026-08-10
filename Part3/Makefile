@@ -3,7 +3,7 @@ BLUE   := \033[0;34m
 BOLD   := \033[1m
 NC     := \033[0m
 
-.PHONY: all install setup test clean help
+.PHONY: all install setup test clean port
 
 all: install setup
 
@@ -14,6 +14,10 @@ install:
 setup:
 	@echo "$(BOLD)$(BLUE)Setting up K3d cluster and ArgoCD${NC}"
 	@bash scripts/setup.sh
+
+port:
+	@echo "$(BOLD)$(BLUE)Forwarding Port to access ArgoCD on https://localhost:8080 on main machine${NC}"
+	kubectl port-forward svc/argocd-server -n argocd 8080:443 --address 0.0.0.0
 
 test:
 	@echo "$(BOLD)$(BLUE)Checking cluster nodes${NC}"
