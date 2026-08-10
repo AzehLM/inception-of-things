@@ -329,8 +329,61 @@ Cluster K3d \
 |__ namespace: argocd (ArgoCD - check the repo Github)\
 |__ namespace: dev (app wil42/playground - deployed automatically by ArgoCD)
 
+GitHub repo (tes manifests) \
+        ↑ surveille en permanence \
+        | \
+    ArgoCD (dans K3d) \
+        ↓ applique les changements \
+    Kubernetes (K3d) \
+        ├── Service → expose le pod en interne \
+        ├── Ingress → route le trafic HTTP externe vers le service \
+        └── Pod (wil42/playground) \
+                ↑ \
+            accessible via port 8888 depuis ta VM/host \
+
+            
 ### Forward port to access to argocd
 * kubectl port-forward svc/argocd-server -n argocd 8080:443 --address 0.0.0.0
+
+### setup
+* Create infra
+1. Create Cluster with port mapping
+2. Create namespaces (dev and app)
+3. Apply official manifests of argoCD
+4. Apply confs of argoCD in yml
+
+### argocd-app.yml
+* source: where ArgoCD will check
+* destination: where ArgoCD will apply changes found
+* syncPolicy.automated: check repo every 3 minutes
+* prune: true: if a file is deleted in Git -> will do so in cluster
+* selfHeal: true: if something is modified manually in the cluster -> will be modified to fit the Git
+
+### deployment.yml
+* define the app
+
+### service.yml
+* intern DNS
+* create an IP and a stable DNS so that always point to active pods.
+* This allows internal cluster components (like Traefik) to reach the app without knowing the pod's actual IP.
+* ClusterIP = internal only, not accessible from outside the cluster.
+* External access is handled by the Ingress.
+
+### ingress.yml
+* http routeur \
+curl http://localhost:8888 \
+    ↓ \
+Port 8888 de ta VM \
+    ↓ (K3d port mapping "8888:80@loadbalancer") \
+Port 80 du loadbalancer K3d \
+    ↓ \
+Traefik (lit l'Ingress "playground-ingress") \
+    ↓ (règle: path "/" → service "playground:8888") \
+Service "playground" (ClusterIP stable) \
+    ↓ (selector: app=playground) \
+Pod wil42/playground:v1 \
+    ↓ \ 
+Réponse HTTP \
 
 ---
 
@@ -342,6 +395,7 @@ Cluster K3d \
 * `vagrant provision`: Force to replay the provision/script part on the VM
 * `kubectl get pods -A`: List all running pods across all namespaces.
 * `sudo virsh undefine Part2_lbuissonS --remove-all-storage` clear memory linked to a libvirt VM
+* `k3d cluster delete iot-cluster`
 
 ---
 
@@ -448,3 +502,6 @@ En parallèle pour le réseau : bridge (virbr0/virbr1) = le switch virtuel, vnet
    * Vagrant+K3s
       * https://medium.com/@dharsannanantharaman/create-a-high-availabilty-lightweight-kubernetes-k3s-cluster-using-vagrant-822a1e025855
       * https://web-docs.gsi.de/~vpenso/notes/posts/kubernetes/vagrant-k3s.html
+   * ArgoCD
+      * https://argo-cd.readthedocs.io/en/stable/
+      * https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/
