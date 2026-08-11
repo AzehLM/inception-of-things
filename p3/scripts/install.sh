@@ -40,3 +40,4 @@ fi
 
 echo
 echo "All packages installed. Run setup.sh next to create the cluster and deploy Argo CD."
+echo
