@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: http://172.18.0.4:80/root/inception-of-things.git
+    repoURL: http://gitlab.gitlab.svc.cluster.local/root/inception-of-things.git
     targetRevision: feat/bonus-lbuisson
     path: bonus/manifests
   destination:
