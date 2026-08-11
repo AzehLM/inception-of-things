@@ -109,3 +109,14 @@ Ce n'est pas le role du Service de comprendre ou de faire du routage basé sur l
 https://github.com/traefik/traefik/pull/3404
 https://institute.sfeir.com/en/kubernetes-training/manifests-yaml-kubernetes-reference-quick/
 https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/
+
+
+### P3
+
+TODO:
+
+- [ ] Script vérification dépendences présentes
+- [ ] Script installation/desinstallation des dépendences -> (docker, k3d, argocd ?, **autre ?**)
+- [ ] Namespaces -> dev/argocd (ou **Argo CD ?**)
+- [ ] Deployer app via wil dockerhub [images](https://hub.docker.com/r/wil42/playground)
+- [ ] Le reste apres
