@@ -38,6 +38,10 @@ Useful key config:
 
 Wrapper qui fait tourner K3s a l'intérieur de Docker containers. K3d simule un cluster K8s multi-noeuds dans des containers docker sur la machine locale. Beaucoup plus léger et rapide a instancier
 
+# K3s vs K3d
+
+K3d n'est pas juste K3s en plus léger, c'est K3d **qui tourne a l'intérieur de containers Docker** plutot que sur une VM. Chaque "node" K3d est en fait un container Docker. C'est pour ca que K3s est plus rapide a instancier, car il n'y a pas de boot d'OS complet.
+
 #### Différences clé:
 
 |   | K3s | K3d |
@@ -116,7 +120,26 @@ https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/
 TODO:
 
 - [ ] Script vérification dépendences présentes
-- [ ] Script installation/desinstallation des dépendences -> (docker, k3d, argocd ?, **autre ?**)
+- [ ] Script installation/desinstallation des dépendences -> (docker, k3d, argocd, kubectl, cli argocd ? plus facile de faire les tests que depuis l'UI web ?)
 - [ ] Namespaces -> dev/argocd (ou **Argo CD ?**)
 - [ ] Deployer app via wil dockerhub [images](https://hub.docker.com/r/wil42/playground)
 - [ ] Le reste apres
+
+
+- Qu'est-ce qu'un **Application** Argo CD ? (Object CRD qui lie repo Git + path + cluster cible + namespace (faire diagramme))
+- Différence entre **Synced** et **OutOfSync**, meme chose pour les état **Healthy** (Progressing, Degraded, etc) en quoi c'est différent de **Synced** (compare l'état désire vs Git, l'autre check l'état réel des ressources vs ce qui est attendu (pods))
+- Sync manuel vs sync auto
+
+Pourquoi 2 namespaces ?
+- `argocd`: contient les composants internes d'ArgoCD (server API, repo-server, controller d'application, redis, etc.) -> c'est l'outil de deploiement (mais est-ce que c'est le serveur ?)
+- `dev`: le namespace **cible du deploiment** -> la ou Argo CD va créer les objects Kubernetes (`Deployment`, `Service`, etc)
+
+On ne met pas tout dans le meme namespace car ArgoCD est censé pouvoir déployer vers **n'importe quel cluster/namespace cible** pour répondre au principe d'isolation entre outil de CD et ce qu'il déploie. On pourrait alors avoir plusieurs namespace gérés par le meme Argo CD. C'est une architecture faire pour scaler
+
+Quand on effectuera des modifications sur le repo, coté ArgoCD il se passera:
+- **[Repo-server](https://argo-cd.readthedocs.io/en/stable/operator-manual/server-commands/argocd-repo-server/)** poll le repo Git (toute les 3min par defaut)
+- Compare le contenu Git avec l'état vivant du cluster
+- Détecte une différence ? change l'état de l'app a `OutOfSync`
+- Si l'auto-sync est activé, l'applique automatiquement sinon il faut `Sync` a la main.
+- [doc](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/)
+
