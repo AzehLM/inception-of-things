@@ -17,6 +17,7 @@ k3d cluster create iot-cluster \
 echo -e "${BOLD}${BLUE}Creating namespaces${NC}"
 kubectl create namespace argocd
 kubectl create namespace dev
+kubectl create namespace gitlab
 
 echo -e "${BOLD}${BLUE}Installing ArgoCD in argocd namespace${NC}"
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml --server-side || true

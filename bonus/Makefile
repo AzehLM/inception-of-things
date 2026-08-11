@@ -24,7 +24,7 @@ test:
 	kubectl get nodes
 	@echo ""
 	@echo "$(BOLD)$(BLUE)Checking namespaces${NC}"
-	kubectl get ns | grep -E "argocd|dev"
+	kubectl get ns | grep -E "argocd|dev|gitlab"
 	@echo ""
 	@echo "$(BOLD)$(BLUE)Checking ArgoCD pods${NC}"
 	kubectl get pods -n argocd
