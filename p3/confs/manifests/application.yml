@@ -1,21 +1,21 @@
-apiVersion: v1
+apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: p3
-  namespace: dev
+  namespace: argocd
 spec:
-  ingressClassName: traefik
-  rules:
-  - host: argocd.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: argocd
-            port:
-              number: 80
-  - host: wil
-    source:
-      path: wil42/playground:v1 # https://hub.docker.com/r/wil42/playground
+  project: default
+  source:
+    repoURL: https://github.com/AzehLM/inception-of-things.git
+    targetRevision: feat/p3-gueberso
+    path: p3/confs/manifests/wil-app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+  syncPolicy:
+    automated:
+      enabled: true # true by default if not specified
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
