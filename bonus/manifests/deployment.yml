@@ -16,7 +16,7 @@ spec:
       containers:
         - name: playground
           # Change this tag from v1 to v2 to trigger ArgoCD auto-sync
-          image: wil42/playground:v2
+          image: wil42/playground:v1
           ports:
             - containerPort: 8888
 ---
