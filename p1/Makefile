@@ -37,10 +37,10 @@ clean:
 	@echo "==> Destroying VMs..."
 	-vagrant destroy -f
 	@echo "==> Cleaning up libvirt leftovers..."
-	-sudo virsh destroy Part1_lbuissonS 2>/dev/null
-	-sudo virsh destroy Part1_lbuissonSW 2>/dev/null
-	-sudo virsh undefine Part1_lbuissonS --remove-all-storage 2>/dev/null
-	-sudo virsh undefine Part1_lbuissonSW --remove-all-storage 2>/dev/null
+	-sudo virsh destroy p1_lbuissonS 2>/dev/null
+	-sudo virsh destroy p1_lbuissonSW 2>/dev/null
+	-sudo virsh undefine p1_lbuissonS --remove-all-storage 2>/dev/null
+	-sudo virsh undefine p1_lbuissonSW --remove-all-storage 2>/dev/null
 	-sudo virsh net-destroy k3s_network 2>/dev/null
 	-sudo virsh net-undefine k3s_network 2>/dev/null
 	-sudo virsh net-destroy vagrant-libvirt 2>/dev/null

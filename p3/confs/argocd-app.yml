@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: 'https://github.com/AzehLM/inception-of-things.git'
     targetRevision: feat/p3-lbuisson
-    path: Part3/manifests
+    path: p3/manifests
   destination:
     server: https://kubernetes.default.svc
     # App deploys into the dev namespace
