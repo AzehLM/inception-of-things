@@ -84,7 +84,21 @@ vagrant ssh <nameS> -c "kubectl get ingressclass"
 
 vagrant up
 vagrant ssh guebersoS
-kubectl get nodes                            
+kubectl get nodes
 kubectl get all -n p2
 kubectl get ingress -n p2
 curl -H "Host: app1.com" http://192.168.56.110
+
+
+# Part 3 - K3d and mettre au propre aussi j'avais oublié
+
+Commandes a faire sur la machine hote
+```sh
+# Récupère le secret mdp pour ce log via l'UI Argo CD (et probablement depuis le CLI aussi a voir)
+# Doit etre decoder depuis la base64
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+
+# Permet de forward ArgoCD sur le port 8080
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+# il faut également rajouté dans l'onglet PORTS la forwarded address localhost:8080 ensuite
+```
