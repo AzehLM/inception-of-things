@@ -10,3 +10,6 @@ install:
 setup:
 	@chmod +x ./scripts/setup.sh
 	@./scripts/setup.sh
+
+fclean:
+	@k3d cluster delete iot-cluster
