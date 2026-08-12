@@ -1,160 +1,234 @@
-# personal notes
+# Personal notes - Inception of Things
 
-# Kubernetes (K8s)
+## Kubernetes (K8s)
 
-Orchestrateur de conteneurs. Gere automatiquement le deploiement, la mise a l'échelle et l'état d'un ensemble d'applications conteneurisées. Concretement on dit "je veux X instances de cette application" et il les maintient dans cet état, meme quand ca crash
+Container orchestrator. Automatically handles deployment, scaling, and state of
+several containerized applications, even when they crash.
 
-### Abstraction
+### Core abstractions
 
-- **Pod**: unité de base. Un pod contient un ou plusieurs conteneurs qui partagent lememe reseau et le meme stockage
-- **Deployment**: Un object qui gere des pods. Décrit combien de replicats, quelles images utilises etc. S'assure que le nombre de pod voulu tourne a tout instant. Si un pod meurt, le Deployement en relance un
-- **ReplicatSet**: créé automatiquement par un Deployment, il est le responsable du maintient du bon nombre de replicas de pods en vie. (On peut le voir via les outputs de `kubectl`)
-- **Service**: K8s donne a chaque pod une IP interne qui change a chaque recreation. Un Service fournit une IP et un nom DNS stable qui redirigent vers les pods. C'est l'abstraction réseau interne des clusters
-- **NameSpace**: un espace de noms logique qui partitionne un cluster (possible d'avoir plusieurs environnement dans un meme cluster physique (dev, prod, argocd, etc.)).
-- **Ingress**: un object qui expose des services HTTP/HTTPS vers l'exterieur d'un cluster. Avec du routage par nom de domaine (`app1.com`, `app2.com`, etc.)
-- **kubectl**: Kubernetes CLI. On interagis avec nos cluster avec lui (`kubectl get pods`, `kubectl apply -f file.yaml`, etc.). Les fichiers de config K8s sont en yaml
-
+- **Pod**: base unit. A pod is made of one or several containers sharing the
+  same network and storage.
+- **Deployment**: an object managing pods. Describes the number of replicas,
+  which image is used, etc. Makes sure the wanted number of pods is running at
+  any time - if a pod dies, the Deployment relaunches another one.
+- **ReplicaSet**: created by the Deployment, it's responsible for maintaining
+  the right number of live pod replicas (visible via `kubectl` output).
+- **Service**: K8s gives each pod an internal IP that changes on re-creation.
+  A Service provides a stable IP and DNS name that redirect to the pods - the
+  internal network abstraction of a cluster.
+- **Namespace**: a logical namespace that partitions a cluster. Makes it
+  possible to run several environments in the same physical cluster (dev,
+  prod, argocd, etc.).
+- **Ingress**: an object that exposes HTTP/HTTPS services outside the cluster,
+  with routing by domain name.
+- **kubectl**: the Kubernetes CLI. Used to interact with a cluster
+  (`kubectl get pods`, `kubectl apply -f file.yaml`, etc.). K8s manifests
+  (config files) are written in YAML.
 
 ## K3s
 
-Distro K8s allégée. C'est une version compressé en un binaire, pensé pour des environnements restreint (IoT, VMs avec peu de RAM, etc.). Inclut le scheduler, le controller manager, le server API, Traefik comme Ingress controller par defaut.
+Lightweight K8s distro, compiled into a single binary, designed for
+constrained environments (IoT, low-RAM VMs, etc.). Bundles the scheduler, the
+controller manager, the API server, and Traefik as the default Ingress
+controller.
 
-- **Mode server (controller)**: node maitre du cluster. Il decide ou placer les pods, surveille l'état du cluster, expose l'API K8s
-- **Mode agent**: node worker. Il recoit des instructions server et fait tourner les pods qui lui sont assignés. Ce connecte avec un **token** au server au démarrage
+- **Server mode (controller)**: the cluster's master node. Decides pod
+  placement, watches cluster state, exposes the K8s API.
+- **Agent mode**: worker node. Receives instructions from the server and runs
+  the pods assigned to it. Connects to the server at startup using a token.
 
+## Vagrant
 
-# Vagrant
-
-Outil qui permet de créer et gérer des machines virtuelles de facon reproductible (via un ficher de config: `Vagranfile`). Ce fichier de config est une description en Ruby des VMs: OS, réseau, ressources, scripts de provisioning, etc. Useful commands:
-- `vagrant up`
-- `vagrand ssh machine_name`
+Tool to create and manage VMs through a config file (`Vagrantfile`). This file
+is a Ruby description of the VMs: OS, network, resources, provisioning
+scripts, etc.
 
 Useful key config:
-- `config.vm.network`: pour l'ID dédiée
-- `config.vm.provider`: pour le provider (VirtualBox, ou Docker ? + nom, RAM, CPU)
-- `config.vm.provision "shell"`: pour exécuter des scripts au lancement
+- `config.vm.network`: dedicated IP
+- `config.vm.provider`: specify provider (VirtualBox, libvirt...), RAM, CPU
+- `config.vm.provision "shell"` / `"ansible"`: specify provisioning type and
+  parameters
 
-# K3d
+## K3d
 
-Wrapper qui fait tourner K3s a l'intérieur de Docker containers. K3d simule un cluster K8s multi-noeuds dans des containers docker sur la machine locale. Beaucoup plus léger et rapide a instancier
+Wrapper that runs K3s inside Docker containers. K3d simulates a multi-node K8s
+cluster using Docker containers on the local machine - much lighter and
+faster to spin up than a VM-based setup.
 
-# K3s vs K3d
+K3d isn't just "K3s but lighter": the key difference is that it runs inside
+Docker containers rather than on a VM. Each K3d "node" is actually a Docker
+container. That's why K3d is so fast to bootstrap - there's no full OS boot
+involved.
 
-K3d n'est pas juste K3s en plus léger, c'est K3d **qui tourne a l'intérieur de containers Docker** plutot que sur une VM. Chaque "node" K3d est en fait un container Docker. C'est pour ca que K3s est plus rapide a instancier, car il n'y a pas de boot d'OS complet.
+|              | K3s                     | K3d               |
+|--------------|--------------------------|--------------------|
+| Runs on      | A VM / real machine      | Docker containers  |
+| Usage        | Real-world deployment    | Local development  |
+| Speed        | Slow to bootstrap        | Very fast          |
+| Requirements | Vagrant / Linux          | Docker             |
 
-#### Différences clé:
+## Argo CD
 
-|   | K3s | K3d |
-|---|---|---|
-| tourne sur | Une VM / Machine réelle   | Des containers Docker |
-| Usage | Déploiement réel | Développement local |
-| Rapidité | Lent a bootstrapper | Rapido presto |
-| Prérequis | Vagrant / Linux | Docker |
+A **GitOps** tool, built on the paradigm where a Git repo is the single source
+of truth for infrastructure state. Argo CD continuously watches a Git repo and
+automatically syncs the cluster to match the repo's current state - Git-driven
+CD, with no CI/CD pipeline involved.
 
-# Argo CD
+The difference from a manual `kubectl apply` update: it's declarative,
+persistent, and auditable through Git history. The Argo CD UI shows sync
+status, the diff between what's running in the cluster(s) and the Git state,
+plus deployment history.
 
-Outil **GitOps**, paradigme dans lequel *un repo Git est la source de vérité de l'état de l'infrastructure*.
-C'est a dire que Argo CD surveille en continu un repo Git et synchronise automatiquement le cluster pour qu'il corresponde a l'état du actuel du repo.
-C'est du CD piloté par Git, sans pipeline CI/CD. La différence avec une mise a jour avec `kuberctl apply` c'est que c'est *déclaratif*, permanent et auditable via l'historique Git.
-L'interface d'Argo CD montre l'état de synchronisation, les différences entre ce qui tourne dans le/les clusters et l'état Git (+ historique de déploiement)
+## Deeper concepts
 
+### Ingress - the cluster's HTTP router
 
+An Ingress controls how web traffic reaches the workload (pods/applications).
+It's the entrypoint of the cluster, consolidating a set of routing rules into
+a single resource - the single listener for interactions with the cluster
+(hence using Traefik/Nginx/Caddy as the Ingress controller for HTTP
+workloads).
 
-## Concepts un peu plus détaillé
+### cgroups - Control Groups (Linux kernel)
 
-### Ingress - routeur HTTP du cluster
+Control groups are a Linux kernel feature that lets you limit, isolate, and
+monitor the resources consumed by groups of processes. On an OpenRC distro
+(Alpine), the `cgroups` OpenRC service is used to mount/initialize cgroups at
+boot.
 
-Un Ingress permet de controler comment le traffic web atteint le workload (pods/applications).
-L'Ingress est l'entrypoint de nos clusters. Il permet de consolider une routine de regles en une ressource unique. Il est le seul listener des intereactions avec notre cluster. (D'ou l'utilisation de Traefik/Nginx/Caddy comme Ingress (dans le cas de workload HTTP))
-
-### cgroups - Control Groups (noyau Linux)
-
-Les control groups sont une des feature du noyau Linux qui permet de **limiter, isoler, monitorer** les ressources consommées par des gorupes de processus.
-Quand on utiliser une distribution OpenRC (Alpine), on utiliser rc-group (Service OpenRC)  pour monter/initialiser les cgroups au boot
-
-
-# Token secret
+### K3s node token
 
 `/var/lib/rancher/k3s/server/node-token`
 
-Token secret qui sert de secret partagé entre server et agents.
-
-On en a besoin pour s'authentifier au server
+Shared secret between the server and agents, needed for agents to
+authenticate against the server:
 
 ```sh
 curl -sfL https://get.k3s.io | sh -s - agent \
   --server https://x \
-  --token <contenu_du_node-token>```
+  --token <node-token-content>
 ```
 
-Avec Ansible on peut le récupérer via une tache `slurp` ou `fetch` ou encore via les `hostvars` pour partager une value entre plusieurs plays d'un meme playbook
+In Ansible, it can be retrieved via a `slurp` or `fetch` task, or shared
+across plays within the same playbook via `hostvars`.
+([k3s token docs](https://docs.k3s.io/cli/token))
 
-[k3s token](https://docs.k3s.io/cli/token)
+---
 
-
-
-### P2
+## P2 notes
 
 `service.yml` != `deployment.yml`
 
-C'est le **deployment** qui indique le nombre de pods de cette image. Le service est une **abstraction réseau** c'est lui qui donne une IP stable + un nom DNS interne a un group de pods (dont les IP changent a la recréation).
+It's the **Deployment** that specifies how many pods run a given image. The
+**Service** is a network abstraction: it provides a stable IP + internal DNS
+name for a group of pods (whose individual IPs change on re-creation).
 
-La chaine logique de la P2 c'est:
+The logical chain in p2 is:
 
-`ingress` (entrée HTTP, routage par Host) -> `service` (point d'entré stable, loadbalancing interne) -> `deployment` (configuration des instances réelles de l'app)
-`protocol: TCP` et pas `HTTP` car:
-- TCP = comment les octets circulent entre clients et pods
-- HTTP = contenu de ces octets, au-dessus de TCP
-Ce n'est pas le role du Service de comprendre ou de faire du routage basé sur le contenue des requetes. C'est l'Ingress qui s'occupe de faire la transcription des headers HTPP (pour du virtual hosting par exemple)
+`Ingress` (HTTP entrypoint, Host-based routing) -> `Service` (stable entrypoint,
+internal load balancing) -> `Deployment` (actual app instance configuration)
 
+`protocol: TCP`, not HTTP, because:
+- TCP = how bytes flow between clients and pods
+- HTTP = the content of those bytes, layered on top of TCP
 
-# DOC POUR QUAND JE SUIS PAS A L'ECOLE
+It's not the Service's job to understand or route based on request content -
+that's the Ingress's job, translating HTTP headers (for virtual hosting, for
+example).
 
-https://github.com/traefik/traefik/pull/3404
-https://institute.sfeir.com/en/kubernetes-training/manifests-yaml-kubernetes-reference-quick/
-https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/
+---
 
+## P3 notes
 
-### P3
+**What is an Argo CD `Application`?** A CRD (CustomResourceDefinition)
+instance that binds together a Git repo + path, a target cluster, and a
+target namespace.
 
-TODO:
+Simple analogy:
+- A CRD is like a class/struct definition.
+- A CR (Custom Resource) is an instance of that class.
+- The Argo CD controller is the program that reads that instance and acts on
+  the cluster accordingly.
 
-- Qu'est-ce qu'un **Application** Argo CD ? (Object CRD qui lie repo Git + path + cluster cible + namespace (faire diagramme))
-- Différence entre **Synced** et **OutOfSync**, meme chose pour les état **Healthy** (Progressing, Degraded, etc) en quoi c'est différent de **Synced** (compare l'état désire vs Git, l'autre check l'état réel des ressources vs ce qui est attendu (pods))
-- Sync manuel vs sync auto
+**Sync status vs Health status** - two different axes:
+- *Sync status* (`Synced` / `OutOfSync`): compares the desired state (Git)
+  against what's actually applied to the cluster.
+- *Health status* (`Healthy`, `Progressing`, `Degraded`, ...): checks whether
+  the resources are actually working as expected (e.g. are the pods up and
+  ready), independently of whether they're in sync with Git.
 
-Pourquoi 2 namespaces ?
-- `argocd`: contient les composants internes d'ArgoCD (server API, repo-server, controller d'application, redis, etc.) -> c'est l'outil de deploiement (mais est-ce que c'est le serveur ?)
-- `dev`: le namespace **cible du deploiment** -> la ou Argo CD va créer les objects Kubernetes (`Deployment`, `Service`, etc)
+**Manual vs automatic sync**: without `syncPolicy.automated`, a detected
+`OutOfSync` state requires an explicit `argocd app sync` (or a UI click) to
+reconcile. With `automated` enabled, Argo CD reconciles on its own as soon as
+a diff is detected (see below).
 
-On ne met pas tout dans le meme namespace car ArgoCD est censé pouvoir déployer vers **n'importe quel cluster/namespace cible** pour répondre au principe d'isolation entre outil de CD et ce qu'il déploie. On pourrait alors avoir plusieurs namespace gérés par le meme Argo CD. C'est une architecture faire pour scaler
+**Why two namespaces?**
+- `argocd`: hosts Argo CD's own internal components - `argocd-server`
+  (API/UI), `repo-server`, `application-controller`, `redis`, etc. This is the
+  deployment tool itself.
+- `dev`: the deployment *target* namespace - where Argo CD creates the actual
+  Kubernetes objects (`Deployment`, `Service`, etc.) for the app being
+  managed.
 
-Quand on effectuera des modifications sur le repo, coté ArgoCD il se passera:
-- **[Repo-server](https://argo-cd.readthedocs.io/en/stable/operator-manual/server-commands/argocd-repo-server/)** poll le repo Git (toute les 3min par defaut)
-- Compare le contenu Git avec l'état vivant du cluster
-- Détecte une différence ? change l'état de l'app a `OutOfSync`
-- Si l'auto-sync est activé, l'applique automatiquement sinon il faut `Sync` a la main.
-- [doc](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/)
+Everything isn't in the same namespace because Argo CD is meant to be able to
+deploy to any target cluster/namespace, following the principle of isolating
+the CD tool from what it deploys. A single Argo CD instance could therefore
+manage multiple target namespaces (or even multiple clusters) - an
+architecture designed to scale.
 
-## Argo CD : `--server-side --force-conflicts`
+**Reconciliation loop** - what happens when the Git repo changes:
+1. `repo-server` polls the Git repo (every 3 minutes by default).
+2. Compares the Git content against the live cluster state.
+3. If a diff is detected, the app's status flips to `OutOfSync`.
+4. If auto-sync is enabled, Argo CD applies the change automatically;
+   otherwise a manual `Sync` is required.
+   ([auto-sync docs](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/))
 
-A classic `kubectl apply` (client-side) fails on the official Argo CD manifest. It stocks the previous configuration in the `kubectl.kubernetes.io/last-applied-configuration` annotation, which has a max size of 262144 octets.
-Server-side application bypass this limitation by tracking the propriety of our fields on the servers instead of the above annotation.
+### `--server-side --force-conflicts`
 
-`--force-conflicts` is necessary so the Argo CD controllers can modify themself certain fields when launched. Without this flag, a re-apply would fails because of conflict of fields properties
+A classic `kubectl apply` (client-side) fails on the official Argo CD
+manifest: it stores the previous configuration in the
+`kubectl.kubernetes.io/last-applied-configuration` annotation, capped at
+262144 bytes - and Argo CD's CRDs exceed that. Server-side apply bypasses this
+by tracking field ownership on the server instead of that annotation.
 
+`--force-conflicts` is necessary because Argo CD's own controllers modify some
+of these fields once running; without this flag, a re-apply would fail on a
+field-ownership conflict.
 
-## NodePort + k3d loadbalancer instead of Ingress
+### NodePort + k3d loadbalancer instead of an Ingress
 
-The p2 explicitly asked for an `Host` to route the HTTP requests (app1.com, app2.com, app3.com) via an Ingress.
-The p3 only has one application to expose with no hostname requirements or anything. So a `NodePort` is enough, its port is exposed via the loadbalancer port mapping of k3d (`-p 8888:30888@loadbalancer` in the `setup.sh` script).
+p2 explicitly required Host-based HTTP routing (app1.com, app2.com,
+app3.com) via an Ingress. p3 only has one application to expose, with no
+hostname-routing requirement. A `NodePort` is enough, exposed via k3d's
+load-balancer port mapping (`-p 8888:30888@loadbalancer` in `setup.sh`).
 
-## `syncPolicy` : `automated` + `prune` + `selfHeal`
+### `syncPolicy`: `automated` + `prune` + `selfHeal`
 
+- `automated.enabled`: Argo CD synchronizes without manual intervention once
+  it detects a diff between Git and the cluster (Git = source of truth).
+- `prune: true`: any resource removed from the repo is removed from the
+  cluster.
+- `selfHeal: true`: the actual GitOps guarantee. Without it, Argo CD only
+  fixes the cluster when *Git* changes; with `selfHeal`, a `kubectl
+  edit`/`delete` done directly on the cluster gets reverted back to the
+  declared Git state.
+- `syncOptions: [CreateNamespace=true]`: the `dev` namespace is created
+  automatically by Argo CD before the app is deployed. This choice comes
+  directly from a bug hit in p2 (`namespace "x" not found` - manifest
+  application order matters). With this option, the only namespace created
+  manually is `argocd`; Argo CD then creates `dev` itself. Fixes the ordering
+  issue without a manual step.
 
-- `automated.enabled` : Argo CD synchronizes without manual intervention once it detects a diff between Git and a cluster (Git = source of truth).
+---
 
-- `prune: true` : any ressource removed from the repo is suppressed of the cluster
-- `selfHeal: true` : Only GitOps guarentee. Without this specification Argo CD does fixes cluster only when Git changes, with `selfHeal`, a `kubectl edit/delete` on a cluster is reverted to the declared Git state.
+## Reference links
 
-- `syncOptions: [CreateNamespace=true]` : the `dev` namespace is created automatically by Argo CD before the app deployment. This choice comes from a bug encountered in the p2 (`namespace "x" not found`). There is a priority order of manifest application. With this, the only manual namespace created is `argocd`, which then creates the `dev` namespace via its manifests. This fixes the ordering without manual steps.
+- [K3s CLI token docs](https://docs.k3s.io/cli/token)
+- [Argo CD installation docs](https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/)
+- [Argo CD repo-server reference](https://argo-cd.readthedocs.io/en/stable/operator-manual/server-commands/argocd-repo-server/)
+- [Argo CD auto-sync docs](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/)
+- [Kubernetes manifest/YAML quick reference](https://institute.sfeir.com/en/kubernetes-training/manifests-yaml-kubernetes-reference-quick/)
+- [Traefik PR #3404](https://github.com/traefik/traefik/pull/3404) - context on Traefik's Ingress behavior
+- [k3d by Stephane Robert](https://blog.stephane-robert.info/docs/conteneurs/orchestrateurs/k3d/#architecture-dun-cluster-k3d)
