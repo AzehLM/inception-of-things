@@ -32,12 +32,8 @@ echo "[argocd] waiting for argocd-server to be available..."
 kubectl wait --for=condition=available --timeout=240s deployment/argocd-server -n argocd
 
 # Application (bootstrap)
-if kubectl get application p3 -n argocd &> /dev/null; then
-  echo "[argocd] application 'p3' already exists, skipping apply"
-else
-  echo "[argocd] applying application manifest..."
-  kubectl apply -f "$APP_MANIFEST"
-fi
+echo "[argocd] applying application manifest..."
+kubectl apply -f "$APP_MANIFEST"
 
 echo "[argocd] waiting for Argo CD to sync and create the wil-app service in the 'dev' namespace..."
 until kubectl get svc wil-app -n dev &> /dev/null; do
