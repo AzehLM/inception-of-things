@@ -1,15 +1,18 @@
 .DEFAULT_GOAL	:= all
 
-all: install | setup
+.PHONY: all
+all: install setup
 
-
+.PHONY: install
 install:
-	@chmod +x ./scripts/install.sh
+	@chmod +x scripts/install.sh
 	@./scripts/install.sh
 
+.PHONY: setup
 setup:
-	@chmod +x ./scripts/setup.sh
+	@chmod +x scripts/setup.sh
 	@./scripts/setup.sh
 
+.PHONY: fclean
 fclean:
 	@k3d cluster delete iot-cluster
