@@ -119,13 +119,6 @@ https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/
 
 TODO:
 
-- [ ] Script vérification dépendences présentes
-- [ ] Script installation/desinstallation des dépendences -> (docker, k3d, argocd, kubectl, cli argocd ? plus facile de faire les tests que depuis l'UI web ?)
-- [ ] Namespaces -> dev/argocd (ou **Argo CD ?**)
-- [ ] Deployer app via wil dockerhub [images](https://hub.docker.com/r/wil42/playground)
-- [ ] Le reste apres
-
-
 - Qu'est-ce qu'un **Application** Argo CD ? (Object CRD qui lie repo Git + path + cluster cible + namespace (faire diagramme))
 - Différence entre **Synced** et **OutOfSync**, meme chose pour les état **Healthy** (Progressing, Degraded, etc) en quoi c'est différent de **Synced** (compare l'état désire vs Git, l'autre check l'état réel des ressources vs ce qui est attendu (pods))
 - Sync manuel vs sync auto
@@ -143,3 +136,25 @@ Quand on effectuera des modifications sur le repo, coté ArgoCD il se passera:
 - Si l'auto-sync est activé, l'applique automatiquement sinon il faut `Sync` a la main.
 - [doc](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/)
 
+## Argo CD : `--server-side --force-conflicts`
+
+A classic `kubectl apply` (client-side) fails on the official Argo CD manifest. It stocks the previous configuration in the `kubectl.kubernetes.io/last-applied-configuration` annotation, which has a max size of 262144 octets.
+Server-side application bypass this limitation by tracking the propriety of our fields on the servers instead of the above annotation.
+
+`--force-conflicts` is necessary so the Argo CD controllers can modify themself certain fields when launched. Without this flag, a re-apply would fails because of conflict of fields properties
+
+
+## NodePort + k3d loadbalancer instead of Ingress
+
+The p2 explicitly asked for an `Host` to route the HTTP requests (app1.com, app2.com, app3.com) via an Ingress.
+The p3 only has one application to expose with no hostname requirements or anything. So a `NodePort` is enough, its port is exposed via the loadbalancer port mapping of k3d (`-p 8888:30888@loadbalancer` in the `setup.sh` script).
+
+## `syncPolicy` : `automated` + `prune` + `selfHeal`
+
+
+- `automated.enabled` : Argo CD synchronizes without manual intervention once it detects a diff between Git and a cluster (Git = source of truth).
+
+- `prune: true` : any ressource removed from the repo is suppressed of the cluster
+- `selfHeal: true` : Only GitOps guarentee. Without this specification Argo CD does fixes cluster only when Git changes, with `selfHeal`, a `kubectl edit/delete` on a cluster is reverted to the declared Git state.
+
+- `syncOptions: [CreateNamespace=true]` : the `dev` namespace is created automatically by Argo CD before the app deployment. This choice comes from a bug encountered in the p2 (`namespace "x" not found`). There is a priority order of manifest application. With this, the only manual namespace created is `argocd`, which then creates the `dev` namespace via its manifests. This fixes the ordering without manual steps.
