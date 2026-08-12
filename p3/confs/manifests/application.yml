@@ -10,12 +10,12 @@ spec:
     targetRevision: feat/p3-gueberso
     path: p3/confs/manifests/wil-app
   destination:
-    server: https://kubernetes.default.svc
+    server: https://kubernetes.default.svc # Argo CD watches its own cluster
     namespace: dev
   syncPolicy:
     automated:
       enabled: true # true by default if not specified
-      prune: true
-      selfHeal: true
+      prune: true # remove cluster no longer present in Git
+      selfHeal: true # reverts manual cluster changes back to Git state, making Git the only source of truth
     syncOptions:
-      - CreateNamespace=true
+      - CreateNamespace=true # replaces the p2 Ansible task creating the namespace (as well as avoiding namespace creation order issues)
