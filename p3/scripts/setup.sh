@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -eo pipefail
 
 CLUSTER_NAME="iot-cluster"
 APP_MANIFEST="./confs/manifests/application.yml"
@@ -9,7 +9,7 @@ if k3d cluster list | grep -qw "$CLUSTER_NAME"; then
   echo "[k3d] cluster '$CLUSTER_NAME' already exists, skipping creation"
 else
   echo "[k3d] creating cluster '$CLUSTER_NAME'..."
-  k3d cluster create "$CLUSTER_NAME" -p "8888:30888@loadbalancer"
+  k3d cluster create "$CLUSTER_NAME" -p "8888:30888@loadbalancer" # -p "8888:30888@loadbalancer" maps host port 8888 to port 30888 on the k3d-managed serverlb (server load balancer)
 fi
 
 # Namespace argocd
