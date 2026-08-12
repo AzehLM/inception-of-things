@@ -32,6 +32,7 @@ echo "[argocd] waiting for argocd-server to be available..."
 kubectl wait --for=condition=available --timeout=240s deployment/argocd-server -n argocd
 
 # Application (bootstrap)
+# we are using the server API kubectl.kubernetes.io/last-applied-configuration value to unsure we have to apply or not the manifests
 echo "[argocd] applying application manifest..."
 kubectl apply -f "$APP_MANIFEST"
 
@@ -48,10 +49,14 @@ pkill -f "port-forward svc/wil-app" 2>/dev/null || true
 
 nohup kubectl port-forward svc/argocd-server -n argocd 8080:443 &> /tmp/pf-argocd.log &
 
+ARGOCD_PASSWORD=$(kubectl get secret argocd-initial-admin-secret \
+    -n argocd \
+    -o jsonpath='{.data.password}' | base64 --decode)
+
 echo
 echo "All done."
 echo "Argo CD UI  : https://localhost:8080"
 echo "wil-app     : http://localhost:8888"
 echo
 echo "Admin password:"
-echo "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath=\"{.data.password}\" | base64 -d; echo"
+echo "$ARGOCD_PASSWORD"
