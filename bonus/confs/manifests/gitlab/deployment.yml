@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab
+  namespace: gitlab
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # explicitly kills the previous pod
+  selector:
+    matchLabels:
+      app: gitlab
+  template:
+    metadata:
+      labels:
+        app: gitlab
+    spec:
+      containers:
+        - name: gitlab
+          image: gitlab/gitlab-ce:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          env:
+            - name: GITLAB_OMNIBUS_CONFIG
+              value: |
+                external_url 'http://localhost:8081'
+
+                # https://docs.gitlab.com/omnibus/settings/memory_constrained_envs/
+
+                puma['worker_processes'] = 0
+                puma['min_threads'] = 1
+                puma['max_threads'] = 4
+
+                # Changer pour 5 si ca lag encore (a tester a l'ecole)
+                sidekiq['concurrency'] = 10 
+
+                alertmanager['enable'] = false
+                gitlab_exporter['enable'] = false
+                gitlab_kas['enable'] = false
+                node_exporter['enable'] = false
+                postgres_exporter['enable'] = false
+                prometheus_monitoring['enable'] = false
+                prometheus['enable'] = false
+                puma['exporter_enabled'] = false
+                redis_exporter['enable'] = false
+                sidekiq['metrics_enabled'] = false
+
+                registry['enable'] = false
+                gitlab_pages['enable'] = false
+                gitlab_rails['usage_ping_enabled'] = false
+
+                gitaly['configuration'] = {
+                  concurrency: [
+                    { 'rpc' => "/gitaly.SmartHTTPService/PostReceivePack", 'max_per_repo' => 3 },
+                    { 'rpc' => "/gitaly.SSHService/SSHUploadPack", 'max_per_repo' => 3 },
+                  ],
+                }
+                gitaly['env'] = {
+                  'GITALY_COMMAND_SPAWN_MAX_PARALLEL' => '2'
+                }
+
+                postgresql['shared_buffers'] = '128MB'
+                postgresql['max_connections'] = 50
+
+                nginx['worker_processes'] = 1
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "500m"
+            limits:
+              memory: "7Gi"
+          readinessProbe:
+            httpGet:
+              path: /users/sign_in
+              port: 8081
+          livenessProbe:
+            httpGet:
+              path: /users/sign_in
+              port: 8081
+            initialDelaySeconds: 400 # 300
+            periodSeconds: 60 # 120
+            timeoutSeconds: 10
+            failureThreshold: 5 # 10
+          volumeMounts:
+            - name: gitlab-config
+              mountPath: /etc/gitlab
+            - name: gitlab-data
+              mountPath: /var/opt/gitlab
+            - name: gitlab-logs
+              mountPath: /var/log/gitlab
+      volumes:
+        - name: gitlab-config
+          persistentVolumeClaim:
+            claimName: gitlab-config-pvc
+        - name: gitlab-data
+          persistentVolumeClaim:
+            claimName: gitlab-data-pvc
+        - name: gitlab-logs
+          persistentVolumeClaim:
+            claimName: gitlab-logs-pvc
