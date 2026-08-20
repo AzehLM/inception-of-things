@@ -25,7 +25,7 @@ else
   kubectl create namespace argocd
 fi
 
-# Namespace + GitLab
+# GitLab Namespace + deployment
 if kubectl get namespace gitlab &> /dev/null; then
   echo "[gitlab] namespace 'gitlab' already exists, skipping creation"
 else
@@ -42,7 +42,7 @@ else
   kubectl apply -f confs/manifests/gitlab/service.yml
 fi
 
-# Argo CD - should be launched will pulling GitLab image
+# Argo CD - should be launched while pulling GitLab image
 if kubectl get deployment argocd-server -n argocd &> /dev/null; then
   echo "[argocd] already deployed, skipping apply"
 else
@@ -54,7 +54,7 @@ echo "[argocd] waiting for argocd-server to be available..."
 kubectl wait --for=condition=available --timeout=240s deployment/argocd-server -n argocd
 
 echo "[gitlab] waiting for gitlab deployment to be available (this can take a while on first boot)..."
-kubectl wait --for=condition=available --timeout=1500s deployment/gitlab -n gitlab
+kubectl wait --for=condition=available --timeout=1200s deployment/gitlab -n gitlab
 
 # Port-forwarding in background - next script needs it
 echo "[expose] starting port-forwards (background)..."

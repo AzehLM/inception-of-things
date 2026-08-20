@@ -3,7 +3,7 @@ set -eo pipefail
 
 GITLAB_URL="http://localhost:8081"
 GITLAB_INTERNAL_URL="http://gitlab.gitlab.svc.cluster.local"
-PROJECT_NAME="p3"
+PROJECT_NAME="p3-bonus"
 TOKEN_NAME="bootstrap-argocd"
 WIL_APP_MANIFESTS="./confs/manifests/wil-app"
 APP_MANIFEST="./confs/manifests/application.yml"
@@ -105,13 +105,13 @@ i=0
 until kubectl get svc wil-app -n dev &> /dev/null; do
   i=$((i+1))
   if [[ $i -ge $MAX_RETRIES ]]; then
-    echo "[bootstrap] ERROR: wil-app never appeared in 'dev' after 5min." >&2
+    echo "[bootstrap] ERROR: wil-app never appeared in 'dev' after 3min." >&2
     echo "[bootstrap] Check Argo CD sync status:" >&2
     kubectl get application p3-gitlab -n argocd -o jsonpath='{.status.sync.status} {.status.health.status}{"\n"}' >&2
     echo "[bootstrap] Check repo-server logs: kubectl logs -n argocd deploy/argocd-repo-server" >&2
     exit 1
   fi
-  sleep 5
+  sleep 6
 done
 kubectl wait --for=condition=available --timeout=180s deployment/wil-app -n dev
 
