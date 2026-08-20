@@ -6,6 +6,7 @@ if command -v docker &> /dev/null; then
   echo "[docker] already installed ($(docker --version)), skipping install"
 else
   echo "[docker] installing..."
+  # -f fail silently, -s silence mode (no progress bar), -S show errors if fails (even in silent mode), -L follow HTTP redirections
   curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
   sh /tmp/get-docker.sh
   rm -f /tmp/get-docker.sh
