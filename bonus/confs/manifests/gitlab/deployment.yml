@@ -18,7 +18,7 @@ spec:
       containers:
         - name: gitlab
           image: gitlab/gitlab-ce:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: IfNotPresent # to avoid downloading 8.8G everytime
           ports:
             - containerPort: 8081
           env:
@@ -78,10 +78,10 @@ spec:
             httpGet:
               path: /users/sign_in
               port: 8081
-            initialDelaySeconds: 400 # 300
-            periodSeconds: 60 # 120
+            initialDelaySeconds: 400
+            periodSeconds: 60
             timeoutSeconds: 10
-            failureThreshold: 5 # 10
+            failureThreshold: 5
           volumeMounts:
             - name: gitlab-config
               mountPath: /etc/gitlab
