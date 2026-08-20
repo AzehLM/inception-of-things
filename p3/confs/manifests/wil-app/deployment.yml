@@ -17,4 +17,4 @@ spec:
       - name: wil-app
         image: nginx:alpine
         ports:
-        - containerPort: 8888
+        - containerPort: 443
