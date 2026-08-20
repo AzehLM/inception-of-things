@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-two
+  namespace: p2
+  labels:
+    app: app-two
+spec:
+  type: ClusterIP # automaticaly handle the round-robin between several replicas based on matched selector
+  selector:
+    app: app-two
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80

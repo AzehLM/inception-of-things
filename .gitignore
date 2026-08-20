@@ -1,0 +1,20 @@
+# Vagrant
+.vagrant/
+*.box
+
+# Logs Vagrant
+*.log
+
+# Ansible
+*.retry
+ansible/.vault_pass
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# Fichiers d'édition courants
+*.swp
+*~
+.DS_Store
+.vscode
