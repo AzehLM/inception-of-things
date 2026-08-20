@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: http://gitlab.gitlab.svc.cluster.local/root/p3.git
+    repoURL: http://gitlab.gitlab.svc.cluster.local/root/p3-bonus.git
     targetRevision: main
     path: .
   destination:
