@@ -38,8 +38,8 @@ if kubectl get deployment gitlab -n gitlab &> /dev/null; then
 else
   echo "[gitlab] deploying (pull will run in background)..."
   kubectl apply -f confs/manifests/gitlab/pvc.yml
-  kubectl apply -f confs/manifests/gitlab/deployment.yml
   kubectl apply -f confs/manifests/gitlab/service.yml
+  kubectl apply -f confs/manifests/gitlab/deployment.yml
 fi
 
 # Argo CD - should be launched while pulling GitLab image
