@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/AzehLM/inception-of-things-gueberso.git
+    repoURL: https://github.com/AzehLM/inception-of-things.git
     targetRevision: feat/p3-gueberso
     path: p3/confs/manifests/wil-app
   destination:
